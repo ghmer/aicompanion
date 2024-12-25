@@ -1,0 +1,8 @@
+{
+  "default_api_url": "https://<your.ollama.endpoint>/ollama/api/chat",
+  "max_input_length": 500,
+  "http_client_timeout": 300,
+  "buffer_size": 1024,
+  "selected_response_type": "Ollama",
+  "bearer_token": "my-api-key"
+}
