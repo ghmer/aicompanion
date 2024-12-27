@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"syscall"
+	"time"
 
 	"golang.org/x/term"
 )
@@ -55,8 +56,53 @@ const (
 	Bold         TermColor = "\033[1m"
 	Underline    TermColor = "\033[4m"
 	Reset        TermColor = "\033[0m"
+	ClearLine    TermColor = "\x1B[2K\r"
 	ClearConsole TermColor = "\033[H\033[2J"
 )
+
+// SpinningCharacter represents a character that is being spun.
+type SpinningCharacter struct {
+	ch   rune
+	done bool
+}
+
+// NewSpinningCharacter returns a new instance of CharacterSpinning.
+func NewSpinningCharacter(ch rune) *SpinningCharacter {
+	return &SpinningCharacter{
+		ch:   ch,
+		done: false,
+	}
+}
+
+// StartSpinning starts spinning the character.
+func (cs *SpinningCharacter) StartSpinning() {
+	go func() {
+		for {
+			if cs.done == true {
+				break
+			}
+			fmt.Printf("%s\r*AI is thinking*>%s %s", Yellow, Reset, string(cs.ch))
+			time.Sleep(1000 * time.Millisecond) // wait 1 second
+			switch cs.ch {
+			case '~':
+				cs.ch = '!'
+			case '!':
+				cs.ch = '.'
+			case '.':
+				cs.ch = '-'
+			case '-':
+				cs.ch = '@'
+			default:
+				cs.ch = '~'
+			}
+		}
+	}()
+}
+
+// SignalStopSpinning sends a signal to stop spinning the character.
+func (cs *SpinningCharacter) StopSpinning() {
+	cs.done = true
+}
 
 // printLine fills the terminal line with a specified character or a default '=' character.
 func printLine(char rune) {
