@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -19,6 +20,7 @@ type Companion struct {
 	CurrentSystemRole Message
 	Conversation      []Message
 	Color             TermColor
+	Client            *http.Client
 }
 
 func NewCompanion(config Configuration, aimodel AIModel, color TermColor) *Companion {
@@ -31,23 +33,15 @@ func NewCompanion(config Configuration, aimodel AIModel, color TermColor) *Compa
 		},
 		Conversation: make([]Message, 0),
 		Color:        color,
+		Client:       &http.Client{Timeout: time.Second * time.Duration(config.HTTPClientTimeout)},
 	}
 }
 
 func (companion *Companion) prepareConversation() []Message {
-	var messages []Message = make([]Message, 0)
-	messages = append(messages, companion.CurrentSystemRole)
-
-	if len(companion.Conversation) >= 5 {
-		for _, message := range companion.Conversation[len(companion.Conversation)-5:] {
-			messages = append(messages, message)
-		}
-	} else {
-		for _, message := range companion.Conversation {
-			messages = append(messages, message)
-		}
+	messages := append([]Message{companion.CurrentSystemRole}, companion.Conversation...)
+	if len(messages) > 10 {
+		messages = messages[len(messages)-10:]
 	}
-
 	return messages
 }
 
@@ -97,11 +91,13 @@ func (companion *Companion) ProcessUserInput(message Message) (Message, error) {
 		return result, err
 	}
 
-	cs := NewSpinningCharacter('?')
-	cs.StartSpinning()
+	ctx, cancel := context.WithCancel(context.Background())
+	cs := NewSpinningCharacter('?', 100, 10)
+	cs.StartSpinning(ctx)
+	defer cancel()
 
 	// Create and configure the HTTP request
-	req, err := http.NewRequest("POST", companion.Config.DefaultAPIURL, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.DefaultAPIURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		fmt.Printf("Error creating request: %v\n", err)
 		return result, err
@@ -110,27 +106,108 @@ func (companion *Companion) ProcessUserInput(message Message) (Message, error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	// Execute the HTTP request
-	client := &http.Client{Timeout: time.Second * time.Duration(companion.Config.HTTPClientTimeout)}
-	resp, err := client.Do(req)
+	resp, err := companion.Client.Do(req)
 	if err != nil {
 		fmt.Printf("Error making HTTP request: %v\n", err)
 		return Message{}, err
 	}
 	defer resp.Body.Close()
 
-	cs.StopSpinning()
+	cancel()
 	fmt.Print(ClearLine)
 
 	// Process the streaming response
-	switch companion.Config.SelectedResponseType {
-	case OpenAI:
-		result, err = companion.handleOpenAIStreamResponse(resp)
-	case Ollama:
-		result, err = companion.handleOllamaStreamResponse(resp)
+	result, err = companion.handleStreamResponse(resp)
+	if err != nil {
+		fmt.Println(err)
+	}
+	companion.Conversation = append(companion.Conversation, result)
+
+	return result, nil
+}
+
+func (companion *Companion) handleStreamResponse(resp *http.Response) (Message, error) {
+	var message strings.Builder
+	var result Message
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("Unexpected HTTP status: %s\n", resp.Status)
+		return Message{}, errors.New("unexpected HTTP status")
+	}
+
+	buffer := make([]byte, companion.Config.BufferSize)
+	fmt.Print(companion.Color + "> " + Reset)
+	for {
+		n, err := resp.Body.Read(buffer)
+		if n > 0 {
+			lines := strings.Split(string(buffer[:n]), "\n")
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if len(line) == 0 {
+					continue
+				}
+
+				switch companion.Config.SelectedResponseType {
+				case Ollama:
+					companion.handleOllamaStreamResponse(line, &message, &result)
+				case OpenAI:
+					companion.handleOpenAIStreamResponse(line, &message, &result)
+				}
+
+			}
+		}
+		// Handle EOF and other errors during streaming
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			fmt.Printf("Error reading response: %v\n", err)
+			break
+		}
 	}
 
 	return result, nil
 }
+
+func (companion *Companion) handleOllamaStreamResponse(line string, message *strings.Builder, result *Message) error {
+	var responseObject ResponsePayload
+	if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
+		fmt.Printf("Error parsing JSON: %v\n", err)
+		fmt.Println(line)
+		return err
+	}
+
+	// Print the content from each choice in the chunk
+	message.WriteString(responseObject.Message.Content)
+	fmt.Print(responseObject.Message.Content)
+	if responseObject.Done {
+		*result = companion.createMessage(Assistant, message.String(), nil)
+		fmt.Println()
+		return nil
+	}
+
+	return nil
+}
+
+func (companion *Companion) handleOpenAIStreamResponse(line string, message *strings.Builder, result *Message) error {
+	var responseObject ResponsePayload
+	if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
+		fmt.Printf("Error parsing JSON: %v\n", err)
+		fmt.Println(line)
+		return err
+	}
+
+	// Print the content from each choice in the chunk
+	message.WriteString(responseObject.Message.Content)
+	fmt.Print(responseObject.Message.Content)
+	if responseObject.Done {
+		*result = companion.createMessage(Assistant, message.String(), nil)
+		fmt.Println()
+		return nil
+	}
+
+	return nil
+}
+
+/*
 
 func (companion *Companion) handleOllamaStreamResponse(resp *http.Response) (Message, error) {
 	var message strings.Builder
@@ -239,3 +316,5 @@ func (companion *Companion) handleOpenAIStreamResponse(resp *http.Response) (Mes
 
 	return result, nil
 }
+
+*/

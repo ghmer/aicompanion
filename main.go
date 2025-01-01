@@ -1,21 +1,21 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 )
 
-var Config Configuration
+var Config *Configuration
+var AIScene *Scene
 
 func init() {
-	file, err := os.ReadFile("./config.json")
+	var err error
+	Config, err = NewConfigFromFile("./config.json")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-
-	err = json.Unmarshal(file, &Config)
+	AIScene, err = NewSceneFromFile("./scene.json")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)
@@ -23,17 +23,22 @@ func init() {
 }
 
 func main() {
-	companion1 := NewCompanion(Config, DefaultModel, Green)
-	companion2 := NewCompanion(Config, DefaultModel, Red)
-	companion1.CurrentSystemRole = Message{Role: string(System), Content: "You are a blue man from the blue country. Blue people are the best. Green people are the worst. Your people fight the green people since centuries. You are colorblind and must ask people which color they belong to. You don't ask for instructions, you act the way you think it's best. Peace is never an option."}
-	companion2.CurrentSystemRole = Message{Role: string(System), Content: "You are a green man from the green country. Green people are the best. Blue people are the worst. Your people fight the blue people since centuries. You are colorblind and must ask people which color they belong to. You don't ask for instructions, you act the way you think it's best. Peace is never an option."}
+	companion1 := NewCompanion(*Config, DefaultModel, Green)
+	companion2 := NewCompanion(*Config, DefaultModel, Red)
+	companion1.CurrentSystemRole = Message{Role: string(System), Content: AIScene.Assistant1}
+	companion2.CurrentSystemRole = Message{Role: string(System), Content: AIScene.Assistant2}
 
-	seed := companion2.createMessage(User, "*The scene opens.*", nil)
-	message, _ := companion2.ProcessUserInput(seed)
+	message := companion1.createMessage(User, AIScene.OpeningMessage, nil)
+
+	var assistant1 bool = true
+
 	for {
+		if assistant1 {
+			message, _ = companion1.ProcessUserInput(message)
+		} else {
+			message, _ = companion2.ProcessUserInput(message)
+		}
 		message.Role = string(User)
-		message, _ = companion1.ProcessUserInput(message)
-		message.Role = string(User)
-		message, _ = companion2.ProcessUserInput(message)
+		assistant1 = !assistant1
 	}
 }

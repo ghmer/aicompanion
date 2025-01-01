@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -62,61 +63,72 @@ const (
 
 // SpinningCharacter represents a character that is being spun.
 type SpinningCharacter struct {
-	ch   rune
-	done bool
+	ch         rune
+	timeout    int
+	resetcount int
+	done       bool
 }
 
 // NewSpinningCharacter returns a new instance of CharacterSpinning.
-func NewSpinningCharacter(ch rune) *SpinningCharacter {
+func NewSpinningCharacter(ch rune, timeout, resetcount int) *SpinningCharacter {
 	return &SpinningCharacter{
-		ch:   ch,
-		done: false,
+		ch:         ch,
+		timeout:    timeout,
+		resetcount: resetcount,
+		done:       false,
 	}
 }
 
 // StartSpinning starts spinning the character.
-func (cs *SpinningCharacter) StartSpinning() {
+func (cs *SpinningCharacter) StartSpinning(ctx context.Context) {
 	go func() {
+		var count int
 		for {
-			if cs.done == true {
-				break
-			}
-			fmt.Printf("%s\r*AI is thinking*>%s %s", Yellow, Reset, string(cs.ch))
-			time.Sleep(1000 * time.Millisecond) // wait 1 second
-			switch cs.ch {
-			case '~':
-				cs.ch = '!'
-			case '!':
-				cs.ch = '.'
-			case '.':
-				cs.ch = '-'
-			case '-':
-				cs.ch = '@'
+			select {
+			case <-ctx.Done(): // Stop spinning when context is canceled
+				return
 			default:
-				cs.ch = '~'
+				fmt.Printf("%s\r*AI is thinking*>%s %s", Yellow, Reset, string(cs.ch))
+				time.Sleep(time.Duration(cs.timeout) * time.Millisecond)
+
+				if count%cs.resetcount == 0 {
+					// Cycle through characters
+					switch cs.ch {
+					case '~':
+						cs.ch = '!'
+					case '!':
+						cs.ch = '.'
+					case '.':
+						cs.ch = '-'
+					case '-':
+						cs.ch = '@'
+					default:
+						cs.ch = '~'
+					}
+				}
+
+				count += 1
 			}
 		}
 	}()
 }
 
-// SignalStopSpinning sends a signal to stop spinning the character.
-func (cs *SpinningCharacter) StopSpinning() {
-	cs.done = true
+// gets the width of the current terminal
+func getTerminalWidth(defaultWidth int) int {
+	if w, ok := os.LookupEnv("COLUMNS"); ok {
+		if parsedWidth, err := fmt.Sscanf(w, "%d", &defaultWidth); err == nil && parsedWidth > 0 {
+			return parsedWidth
+		}
+	}
+	if detectedWidth, _, err := term.GetSize(syscall.Stdin); err == nil {
+		return detectedWidth
+	}
+	return defaultWidth
 }
 
 // printLine fills the terminal line with a specified character or a default '=' character.
 func printLine(char rune) {
-	width := 80 // Default width fallback
-	if w, ok := os.LookupEnv("COLUMNS"); ok {
-		if parsedWidth, err := fmt.Sscanf(w, "%d", &width); err == nil && parsedWidth > 0 {
-			width = parsedWidth
-		}
-	} else {
-		if detectedWidth, _, err := term.GetSize(syscall.Stdin); err == nil {
-			width = detectedWidth
-		}
-	}
-
+	width := getTerminalWidth(80)
 	if char == 0 {
 		char = '='
 	}
