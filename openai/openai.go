@@ -1,0 +1,195 @@
+package openai
+
+import "ai-companion/models"
+
+// ModelsRequest represents the request payload for the Models endpoint.
+type ModelsRequest struct {
+	// No parameters required for listing models.
+}
+
+// Model represents a single model in the response.
+type Model struct {
+	ID         string   `json:"id"`
+	Object     string   `json:"object"`
+	Created    int64    `json:"created"`
+	OwnedBy    string   `json:"owned_by"`
+	Permission []string `json:"permission"`
+}
+
+// ModelsResponse represents the response for listing models.
+type ModelsResponse struct {
+	Object string  `json:"object"`
+	Data   []Model `json:"data"`
+}
+
+// CompletionsRequest represents the input payload for generating text completions.
+type CompletionsRequest struct {
+	Model       string   `json:"model"`
+	Prompt      string   `json:"prompt"`
+	MaxTokens   int      `json:"max_tokens"`
+	Temperature float64  `json:"temperature"`
+	TopP        float64  `json:"top_p"`
+	N           int      `json:"n"`
+	Stream      bool     `json:"stream"`
+	Stop        []string `json:"stop"`
+}
+
+// Choice represents a single completion choice.
+type Choice struct {
+	Delta        Delta   `json:"delta"`
+	Index        int     `json:"index"`
+	LogProbs     float64 `json:"logprobs,omitempty"`
+	FinishReason string  `json:"finish_reason,omitempty"`
+}
+
+type Delta struct {
+	Content string `json:"content"`
+}
+
+// CompletionsResponse represents the output of a text completion request.
+type CompletionsResponse struct {
+	ID                string   `json:"id"`
+	Object            string   `json:"object"`
+	Created           int64    `json:"created"`
+	Model             string   `json:"model"`
+	Choices           []Choice `json:"choices,omitempty"`
+	Usage             Usage    `json:"usage,omitempty"`
+	SystemFingerprint string   `json:"system_fingerprint"`
+}
+
+type Usage struct {
+	PromptTokens            int                     `json:"prompt_tokens,omitempty"`
+	CompletionTokens        int                     `json:"completion_tokens,omitempty"`
+	TotalTokens             int                     `json:"total_tokens,omitempty"`
+	PromptTokensDetails     PromptTokensDetails     `json:"prompt_tokens_details,omitempty"`
+	CompletionTokensDetails CompletionTokensDetails `json:"completion_tokens_details,omitempty"`
+}
+
+type PromptTokensDetails struct {
+	CachedTokens int `json:"cached_tokens"`
+}
+
+type CompletionTokensDetails struct {
+	ReasoningTokens          int `json:"reasoning_tokens,omitempty"`           // Assuming reasoning_tokens is a nullable field
+	AcceptedPredictionTokens int `json:"accepted_prediction_tokens,omitempty"` // Assuming accepted_prediction_tokens is a nullable field
+	RejectedPredictionTokens int `json:"rejected_prediction_tokens,omitempty"` // Assuming rejected_prediction_tokens is a nullable field
+}
+
+// ChatRequest represents the input payload for chat completions.
+type ChatRequest struct {
+	Model       string           `json:"model"`
+	Messages    []models.Message `json:"messages"`
+	MaxTokens   int              `json:"max_tokens,omitempty"`
+	Temperature float64          `json:"temperature,omitempty"`
+	Stream      bool             `json:"stream,omitempty"`
+}
+
+// Message represents an individual message in the chat.
+type Message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+// ChatResponse represents the response for a chat completion.
+type ChatResponse struct {
+	ID      string   `json:"id"`
+	Object  string   `json:"object"`
+	Created int64    `json:"created"`
+	Model   string   `json:"model"`
+	Choices []Choice `json:"choices"`
+}
+
+// EmbeddingsRequest represents the input payload for generating embeddings.
+type EmbeddingsRequest struct {
+	Model          string         `json:"model"`
+	Input          []string       `json:"input"`
+	EncodingFormat EncodingFormat `json:"encoding_format"`
+}
+
+type EncodingFormat string
+
+const (
+	Float  EncodingFormat = "float"
+	Base64 EncodingFormat = "base64"
+)
+
+// EmbeddingResponse represents the output of the embeddings request.
+type EmbeddingResponse struct {
+	Object string      `json:"object"`
+	Data   []Embedding `json:"data"`
+	Model  string      `json:"model"`
+	Usage  Usage       `json:"usage"`
+}
+
+// Embedding represents a single embedding vector.
+type Embedding struct {
+	Object    string    `json:"object"`
+	Embedding []float64 `json:"embedding"`
+	Index     int       `json:"index"`
+}
+
+// ImagesRequest represents the input payload for generating images.
+type ImagesRequest struct {
+	Prompt string `json:"prompt"`
+	N      int    `json:"n"`
+	Size   string `json:"size"`
+}
+
+// ImageData represents a single image in the response.
+type ImageData struct {
+	URL string `json:"url"`
+}
+
+// ImagesResponse represents the response for an image generation request.
+type ImagesResponse struct {
+	Created int64       `json:"created"`
+	Data    []ImageData `json:"data"`
+}
+
+type ModerationRequest struct {
+	Input string `json:"input"`
+}
+
+// ModerationResponse represents the root structure of the moderation response.
+type ModerationResponse struct {
+	ID      string             `json:"id"`
+	Model   string             `json:"model"`
+	Results []ModerationResult `json:"results"`
+}
+
+// ModerationResult represents a single result in the moderation response.
+type ModerationResult struct {
+	Flagged        bool                     `json:"flagged"`
+	Categories     ModerationCategories     `json:"categories"`
+	CategoryScores ModerationCategoryScores `json:"category_scores"`
+}
+
+// ModerationCategories represents the categories for moderation.
+type ModerationCategories struct {
+	Sexual                bool `json:"sexual"`
+	Hate                  bool `json:"hate"`
+	Harassment            bool `json:"harassment"`
+	SelfHarm              bool `json:"self-harm"`
+	SexualMinors          bool `json:"sexual/minors"`
+	HateThreatening       bool `json:"hate/threatening"`
+	ViolenceGraphic       bool `json:"violence/graphic"`
+	SelfHarmIntent        bool `json:"self-harm/intent"`
+	SelfHarmInstructions  bool `json:"self-harm/instructions"`
+	HarassmentThreatening bool `json:"harassment/threatening"`
+	Violence              bool `json:"violence"`
+}
+
+// ModerationCategoryScores represents the scores for each moderation category.
+type ModerationCategoryScores struct {
+	Sexual                float64 `json:"sexual"`
+	Hate                  float64 `json:"hate"`
+	Harassment            float64 `json:"harassment"`
+	SelfHarm              float64 `json:"self-harm"`
+	SexualMinors          float64 `json:"sexual/minors"`
+	HateThreatening       float64 `json:"hate/threatening"`
+	ViolenceGraphic       float64 `json:"violence/graphic"`
+	SelfHarmIntent        float64 `json:"self-harm/intent"`
+	SelfHarmInstructions  float64 `json:"self-harm/instructions"`
+	HarassmentThreatening float64 `json:"harassment/threatening"`
+	Violence              float64 `json:"violence"`
+}
