@@ -1,0 +1,69 @@
+package main
+
+import (
+	"ai-companion/models"
+	"ai-companion/ollama"
+	"ai-companion/openai"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+// AICompanion defines the interface for interacting with AI models.
+type AICompanion interface {
+	PrepareConversation() []models.Message
+	CreateMessage(role models.Role, input string) models.Message
+	ReadFile(filepath string) string
+	AddMessage(message models.Message)
+	HandleStreamResponse(resp *http.Response) (models.Message, error)
+	GetConfig() models.Configuration
+	SetConfig(config models.Configuration)
+	GetCurrentSystemRole() models.Message
+	SetCurrentSystemRole(role models.Message)
+	GetConversation() []models.Message
+	SetConversation(conversation []models.Message)
+	GetClient() *http.Client
+	SetClient(client *http.Client)
+	// interactions
+	SendChatRequest(message models.Message) (models.Message, error)
+	SendCompletionRequest(message models.Message) (models.Message, error)
+	SendEmbeddingRequest(embedding models.EmbeddingRequest) (models.EmbeddingResponse, error)
+}
+
+// NewCompanion creates a new Companion instance with the provided configuration.
+func NewCompanion(config models.Configuration) AICompanion {
+	switch config.ApiProvider {
+	case models.Ollama:
+		fmt.Println("ollama")
+		return &ollama.Companion{
+			Config: config,
+			CurrentSystemRole: models.Message{
+				Role:    "system",
+				Content: "You are a helpful assistant",
+			},
+			Conversation: make([]models.Message, 0),
+			Client:       &http.Client{Timeout: time.Second * time.Duration(config.HTTPClientTimeout)},
+		}
+	case models.OpenAI:
+		fmt.Println("openai")
+		return &openai.Companion{
+			Config: config,
+			CurrentSystemRole: models.Message{
+				Role:    "system",
+				Content: "You are a helpful assistant",
+			},
+			Conversation: make([]models.Message, 0),
+			Client:       &http.Client{Timeout: time.Second * time.Duration(config.HTTPClientTimeout)},
+		}
+	}
+
+	return &ollama.Companion{
+		Config: config,
+		CurrentSystemRole: models.Message{
+			Role:    "system",
+			Content: "You are a helpful assistant",
+		},
+		Conversation: make([]models.Message, 0),
+		Client:       &http.Client{Timeout: time.Second * time.Duration(config.HTTPClientTimeout)},
+	}
+}
