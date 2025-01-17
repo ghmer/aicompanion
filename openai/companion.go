@@ -16,55 +16,59 @@ import (
 
 // Companion represents the AI companion with its configuration, conversation history, and HTTP client.
 type Companion struct {
-	Config            models.Configuration
-	CurrentSystemRole models.Message
-	Conversation      []models.Message
-	Client            *http.Client
+	Config       models.Configuration
+	SystemRole   models.Message
+	Conversation []models.Message
+	Client       *http.Client
 }
 
 // GetConfig returns the current configuration of the companion.
-func (c *Companion) GetConfig() models.Configuration {
-	return c.Config
+func (companion *Companion) GetConfig() models.Configuration {
+	return companion.Config
 }
 
 // SetConfig sets a new configuration for the companion.
-func (c *Companion) SetConfig(config models.Configuration) {
-	c.Config = config
+func (companion *Companion) SetConfig(config models.Configuration) {
+	companion.Config = config
 }
 
 // GetCurrentSystemRole returns the current system role of the companion.
-func (c *Companion) GetCurrentSystemRole() models.Message {
-	return c.CurrentSystemRole
+func (companion *Companion) GetSystemRole() models.Message {
+	return companion.SystemRole
 }
 
 // SetCurrentSystemRole sets a new system role for the companion.
-func (c *Companion) SetCurrentSystemRole(role models.Message) {
-	c.CurrentSystemRole = role
+func (companion *Companion) SetSystemRole(prompt string) {
+	var role models.Message = models.Message{
+		Role:    models.System,
+		Content: prompt,
+	}
+	companion.SystemRole = role
 }
 
 // GetConversation returns the current conversation history of the companion.
-func (c *Companion) GetConversation() []models.Message {
-	return c.Conversation
+func (companion *Companion) GetConversation() []models.Message {
+	return companion.Conversation
 }
 
 // SetConversation sets a new conversation history for the companion.
-func (c *Companion) SetConversation(conversation []models.Message) {
-	c.Conversation = conversation
+func (companion *Companion) SetConversation(conversation []models.Message) {
+	companion.Conversation = conversation
 }
 
 // GetClient returns the current HTTP client of the companion.
-func (c *Companion) GetClient() *http.Client {
-	return c.Client
+func (companion *Companion) GetClient() *http.Client {
+	return companion.Client
 }
 
 // SetClient sets a new HTTP client for the companion.
-func (c *Companion) SetClient(client *http.Client) {
-	c.Client = client
+func (companion *Companion) SetClient(client *http.Client) {
+	companion.Client = client
 }
 
 // prepareConversation prepares the conversation by appending system role and current conversation models.Messages.
 func (companion *Companion) PrepareConversation() []models.Message {
-	messages := append([]models.Message{companion.CurrentSystemRole}, companion.Conversation...)
+	messages := append([]models.Message{companion.SystemRole}, companion.Conversation...)
 	if companion.Config.AIType == models.Chat {
 		if len(messages) > companion.Config.MaxMessages {
 			messages = messages[len(messages)-companion.Config.MaxMessages:]

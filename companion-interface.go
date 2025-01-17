@@ -18,8 +18,8 @@ type AICompanion interface {
 	HandleStreamResponse(resp *http.Response) (models.Message, error)
 	GetConfig() models.Configuration
 	SetConfig(config models.Configuration)
-	GetCurrentSystemRole() models.Message
-	SetCurrentSystemRole(role models.Message)
+	GetSystemRole() models.Message
+	SetSystemRole(prompt string)
 	GetConversation() []models.Message
 	SetConversation(conversation []models.Message)
 	GetClient() *http.Client
@@ -37,8 +37,8 @@ func NewCompanion(config models.Configuration) AICompanion {
 		fmt.Println("ollama")
 		return &ollama.Companion{
 			Config: config,
-			CurrentSystemRole: models.Message{
-				Role:    "system",
+			SystemRole: models.Message{
+				Role:    models.System,
 				Content: "You are a helpful assistant",
 			},
 			Conversation: make([]models.Message, 0),
@@ -48,8 +48,8 @@ func NewCompanion(config models.Configuration) AICompanion {
 		fmt.Println("openai")
 		return &openai.Companion{
 			Config: config,
-			CurrentSystemRole: models.Message{
-				Role:    "system",
+			SystemRole: models.Message{
+				Role:    models.Developer,
 				Content: "You are a helpful assistant",
 			},
 			Conversation: make([]models.Message, 0),
@@ -59,8 +59,8 @@ func NewCompanion(config models.Configuration) AICompanion {
 
 	return &ollama.Companion{
 		Config: config,
-		CurrentSystemRole: models.Message{
-			Role:    "system",
+		SystemRole: models.Message{
+			Role:    models.System,
 			Content: "You are a helpful assistant",
 		},
 		Conversation: make([]models.Message, 0),

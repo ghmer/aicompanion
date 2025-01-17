@@ -11,20 +11,20 @@ import (
 
 // Configuration represents the configuration for the application.
 type Configuration struct {
-	AIType            AIType      `json:"ai_type"`
-	AiModel           string      `json:"ai_model"`
-	ApiChatURL        string      `json:"api_chat_url"`
-	ApiGenerateURL    string      `json:"api_generate_url"`
-	ApiEmbedURL       string      `json:"api_embed_url"`
-	ApiModerationURL  string      `json:"api_moderation_url"`
-	MaxInputLength    int         `json:"max_input_length"`
-	HTTPClientTimeout int         `json:"http_client_timeout"`
-	BufferSize        int         `json:"buffer_size"`
-	ApiProvider       ApiProvider `json:"api_provider"`
-	ApiKey            string      `json:"api_key"`
-	MaxMessages       int         `json:"max_messages"`
-	UserColor         string      `json:"term_color"`
-	Output            bool        `json:"term_output"`
+	AIType            AIType      `json:"ai_type"`             // AI interaction type (chat, embed, moderation)
+	AiModel           string      `json:"ai_model"`            // Specific AI model to use
+	ApiChatURL        string      `json:"api_chat_url"`        // URL for chat API
+	ApiGenerateURL    string      `json:"api_generate_url"`    // URL for generate API
+	ApiEmbedURL       string      `json:"api_embed_url"`       // URL for embedding API
+	ApiModerationURL  string      `json:"api_moderation_url"`  // URL for moderation API
+	MaxInputLength    int         `json:"max_input_length"`    // Maximum length of input allowed
+	HTTPClientTimeout int         `json:"http_client_timeout"` // HTTP client timeout duration
+	BufferSize        int         `json:"buffer_size"`         // Buffer size for processing data
+	ApiProvider       ApiProvider `json:"api_provider"`        // API provider used
+	ApiKey            string      `json:"api_key"`             // API key for authentication
+	MaxMessages       int         `json:"max_messages"`        // Maximum number of messages in a conversation
+	UserColor         string      `json:"term_color"`          // Color for user output in terminal
+	Output            bool        `json:"term_output"`         // Flag to enable/disabled terminal output
 	Color             terminal.TermColor
 }
 
@@ -67,6 +67,7 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 		config.ApiProvider = "Ollama" // Default api provider
 	}
 
+	// If AIType is Chat, validate and set default URLs if not provided
 	if config.AIType == Chat {
 		if config.ApiChatURL == "" {
 			fmt.Println("using default url for chat api")
@@ -78,10 +79,12 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 			}
 		}
 
+		// Ensure URL starts with http:// or https://
 		if !strings.HasPrefix(config.ApiChatURL, "http://") && !strings.HasPrefix(config.ApiChatURL, "https://") {
 			return nil, errors.New("invalid configuration: ApiChatURL must start with http:// or https://")
 		}
 
+		// If AIType is Chat, validate and set default URLs if not provided
 		if config.ApiGenerateURL == "" {
 			fmt.Println("using default url for chat api")
 			if config.ApiProvider == Ollama {
@@ -92,11 +95,13 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 			}
 		}
 
+		// Ensure URL starts with http:// or https://
 		if !strings.HasPrefix(config.ApiGenerateURL, "http://") && !strings.HasPrefix(config.ApiGenerateURL, "https://") {
 			return nil, errors.New("invalid configuration: ApiGenerateURL must start with http:// or https://")
 		}
 	}
 
+	// If AIType is Embed, validate and set default URLs if not provided
 	if config.AIType == Embed {
 		if config.ApiEmbedURL == "" {
 			fmt.Println("using default url for chat api")
@@ -108,11 +113,13 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 			}
 		}
 
+		// Ensure URL starts with http:// or https://
 		if !strings.HasPrefix(config.ApiEmbedURL, "http://") && !strings.HasPrefix(config.ApiEmbedURL, "https://") {
 			return nil, errors.New("invalid configuration: ApiEmbedURL must start with http:// or https://")
 		}
 	}
 
+	// If AIType is Moderation, validate and set default URLs if not provided
 	if config.AIType == Moderation {
 		if config.ApiModerationURL == "" {
 			fmt.Println("using default url for chat api")
@@ -124,6 +131,7 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 			}
 		}
 
+		// Ensure URL starts with http:// or https://
 		if !strings.HasPrefix(config.ApiModerationURL, "http://") && !strings.HasPrefix(config.ApiModerationURL, "https://") {
 			return nil, errors.New("invalid configuration: ApiModerationURL must start with http:// or https://")
 		}
@@ -150,9 +158,9 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 
 // Message represents an individual message in the chat.
 type Message struct {
-	Role    Role     `json:"role"`
-	Content string   `json:"content"`
-	Images  []string `json:"images,omitempty"`
+	Role    Role     `json:"role"`             // Role of the message (user, assistant, system)
+	Content string   `json:"content"`          // Content of the message
+	Images  []string `json:"images,omitempty"` // Images associated with the message
 }
 
 // ApiProvider indicates the type of response expected.
@@ -177,28 +185,31 @@ type Role string
 
 const (
 	System    Role = "system"    // System role
+	Developer Role = "developer" // Developer role
 	Assistant Role = "assistant" // Assistant role
 	User      Role = "user"      // User role
 )
 
 // EmbeddingsRequest represents the input payload for generating embeddings.
 type EmbeddingRequest struct {
-	Model          string         `json:"model"`
-	Input          []string       `json:"input"`
-	EncodingFormat EncodingFormat `json:"encoding_format,omitempty"`
+	Model          string         `json:"model"`                     // Model to use for embedding
+	Input          []string       `json:"input"`                     // Input text or data
+	EncodingFormat EncodingFormat `json:"encoding_format,omitempty"` // Encoding format for output
 }
 
+// EncodingFormat specifies the encoding format for embeddings.
 type EncodingFormat string
 
 const (
-	Float  EncodingFormat = "float"
-	Base64 EncodingFormat = "base64"
+	Float  EncodingFormat = "float"  // Float format
+	Base64 EncodingFormat = "base64" // Base64 format
 )
 
+// EmbeddingResponse represents the response payload from generating embeddings.
 type EmbeddingResponse struct {
-	Model           string      `json:"model"`
-	Embeddings      [][]float64 `json:"embeddings"`
-	TotalDuration   int64       `json:"total_duration,omitempty"`
-	LoadDuration    int64       `json:"load_duration,omitempty"`
-	PromptEvalCount int         `json:"prompt_eval_count,omitempty"`
+	Model           string      `json:"model"`                       // Model used for embedding
+	Embeddings      [][]float64 `json:"embeddings"`                  // Generated embeddings
+	TotalDuration   int64       `json:"total_duration,omitempty"`    // Total duration of the request
+	LoadDuration    int64       `json:"load_duration,omitempty"`     // Duration spent loading data
+	PromptEvalCount int         `json:"prompt_eval_count,omitempty"` // Number of prompt evaluations made
 }
