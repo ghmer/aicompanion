@@ -1,12 +1,13 @@
 package models
 
 import (
-	"ai-companion/terminal"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/ghmer/aicompanion/terminal"
 )
 
 // Configuration represents the configuration for the application.

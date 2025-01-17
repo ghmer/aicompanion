@@ -1,4 +1,4 @@
-module ai-companion
+module github.com/ghmer/aicompanion
 
 go 1.23.4
 

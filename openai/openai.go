@@ -1,6 +1,6 @@
 package openai
 
-import "ai-companion/models"
+import "github.com/ghmer/aicompanion/models"
 
 // ModelsRequest represents the request payload for the Models endpoint.
 type ModelsRequest struct {

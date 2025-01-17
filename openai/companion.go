@@ -1,8 +1,6 @@
 package openai
 
 import (
-	"ai-companion/models"
-	"ai-companion/terminal"
 	"bytes"
 	"context"
 	"encoding/base64"
@@ -12,6 +10,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/ghmer/aicompanion/models"
+	"github.com/ghmer/aicompanion/terminal"
 )
 
 // Companion represents the AI companion with its configuration, conversation history, and HTTP client.

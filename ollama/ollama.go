@@ -3,8 +3,9 @@
 package ollama
 
 import (
-	"ai-companion/models"
 	"time"
+
+	"github.com/ghmer/aicompanion/models"
 )
 
 // GenerateRequest represents the request structure for the /api/generate endpoint.

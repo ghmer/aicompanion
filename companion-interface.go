@@ -1,12 +1,13 @@
 package main
 
 import (
-	"ai-companion/models"
-	"ai-companion/ollama"
-	"ai-companion/openai"
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/ghmer/aicompanion/models"
+	"github.com/ghmer/aicompanion/ollama"
+	"github.com/ghmer/aicompanion/openai"
 )
 
 // AICompanion defines the interface for interacting with AI models.
