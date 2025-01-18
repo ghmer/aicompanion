@@ -169,15 +169,18 @@ type Message struct {
 	Images  []Base64Image `json:"images,omitempty"` // Images associated with the message
 }
 
+// Base64Image represents an image encoded in base64.
 type Base64Image struct {
-	Data string
+	Data string // The base64-encoded data of the image
 }
 
+// SetData encodes the provided byte slice into a base64 string and assigns it to Data.
 func (image *Base64Image) SetData(data []byte) {
 	image.Data = base64.StdEncoding.EncodeToString(data)
 }
 
-func (image *Base64Image) GetData(data []byte) ([]byte, error) {
+// GetData decodes the base64-encoded data in Data back into a byte slice.
+func (image *Base64Image) GetData() ([]byte, error) {
 	return base64.StdEncoding.DecodeString(image.Data)
 }
 
@@ -230,9 +233,19 @@ const (
 
 // EmbeddingResponse represents the response payload from generating embeddings.
 type EmbeddingResponse struct {
-	Model           string      `json:"model"`                       // Model used for embedding
-	Embeddings      [][]float64 `json:"embeddings"`                  // Generated embeddings
-	TotalDuration   int64       `json:"total_duration,omitempty"`    // Total duration of the request
-	LoadDuration    int64       `json:"load_duration,omitempty"`     // Duration spent loading data
-	PromptEvalCount int         `json:"prompt_eval_count,omitempty"` // Number of prompt evaluations made
+	Model            string      `json:"model"`             // Model used for embedding
+	Embeddings       [][]float64 `json:"embeddings"`        // Generated embeddings
+	OriginalResponse any         `json:"original-response"` // the original response of the API call.
+}
+
+// ModerationRequest represents a request to check if a given text contains any content that is considered inappropriate or harmful by OpenAI's standards.
+type ModerationRequest struct {
+	Input string `json:"input"`
+}
+
+// ModerationResponse represents the root structure of the moderation response.
+type ModerationResponse struct {
+	ID               string `json:"id"`
+	Model            string `json:"model"`
+	OriginalResponse any    `json:"results"`
 }

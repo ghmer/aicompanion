@@ -146,6 +146,7 @@ type ImagesResponse struct {
 	Data    []ImageData `json:"data"`
 }
 
+// ModerationRequest represents a request to check if a given text contains any content that is considered inappropriate or harmful by OpenAI's standards.
 type ModerationRequest struct {
 	Input string `json:"input"`
 }

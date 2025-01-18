@@ -28,6 +28,16 @@ func createTestImage(width, height int, color color.RGBA) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// createTestImage generates a simple test image with specified dimensions and color.
+func TestReadFile(t *testing.T) {
+	t.Run("Test ReadFile", func(t *testing.T) {
+		_, err := utility.ReadFile("../README.md")
+		if err != nil {
+			t.Error(err)
+		}
+	})
+}
+
 // TestResizeImage_ValidInput tests resizing with valid inputs.
 func TestResizeImage_ValidInput(t *testing.T) {
 	originalWidth := 1920
@@ -132,17 +142,17 @@ func TestResizeImage_PredefinedResolutions(t *testing.T) {
 		t.Fatalf("failed to create test image: %v", err)
 	}
 
-	for name, resolution := range utility.Resolutions {
-		resizedImage, err := utility.ResizeImage(testImage, resolution)
+	for name, resolution := range []utility.Resolution{utility.Res4K, utility.Res2K, utility.Res1080p, utility.Res720p, utility.Res480p, utility.Res360p, utility.Res320p, utility.Res240p, utility.Res144p, utility.Pixel1024, utility.Pixel512} {
+		resizedImage, err := utility.ResizeImage(testImage, int(resolution))
 		if err != nil {
-			t.Errorf("failed to resize image to %s: %v", name, err)
+			t.Errorf("failed to resize image to %d: %v", name, err)
 			continue
 		}
 
 		// Decode resized image
 		resizedImg, _, err := image.Decode(bytes.NewReader(resizedImage))
 		if err != nil {
-			t.Errorf("failed to decode resized %s image: %v", name, err)
+			t.Errorf("failed to decode resized %d image: %v", name, err)
 			continue
 		}
 
@@ -151,8 +161,8 @@ func TestResizeImage_PredefinedResolutions(t *testing.T) {
 		newWidth := resizedBounds.Dx()
 		newHeight := resizedBounds.Dy()
 
-		if newWidth > resolution || newHeight > resolution {
-			t.Errorf("%s resized dimensions exceed max size: got %dx%d, max %d", name, newWidth, newHeight, resolution)
+		if newWidth > int(resolution) || newHeight > int(resolution) {
+			t.Errorf("%d resized dimensions exceed max size: got %dx%d, max %d", name, newWidth, newHeight, name)
 		}
 	}
 }

@@ -6,17 +6,28 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"os"
 
 	_ "image/gif" // Support for GIF decoding
 
 	"golang.org/x/image/draw"
 )
 
-// Predefined resolutions map
-var Resolutions = map[string]int{
-	"4K": 3840,
-	"2K": 2048,
-}
+type Resolution int
+
+const (
+	Res4K     Resolution = 3840
+	Res2K     Resolution = 2048
+	Res1080p  Resolution = 1920
+	Res720p   Resolution = 1280
+	Res480p   Resolution = 640
+	Res360p   Resolution = 480
+	Res320p   Resolution = 320
+	Res240p   Resolution = 320
+	Res144p   Resolution = 256
+	Pixel1024 Resolution = 1024
+	Pixel512  Resolution = 512
+)
 
 // ResizeImage resizes an image to the specified maximum dimension while maintaining its aspect ratio.
 // Larger dimension (width or height) will be resized to maxSize.
@@ -107,20 +118,7 @@ func encodeImage(img image.Image, format string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-/*
-// Example usage: resize to predefined resolution or custom maxSize
-func main() {
-	// Example image data (replace with actual input)
-	inputImage := []byte{} // Load your image file data here
-	maxSize := 512         // Example: Resize to max dimension of 512 pixels
-
-	// Attempt to resize
-	resizedImage, err := ResizeImage(inputImage, maxSize)
-	if err != nil {
-		panic("error resizing image: " + err.Error())
-	}
-
-	// Use resizedImage as needed (e.g., save to a file, return from an API, etc.)
-	println("Image resized successfully")
+// ReadFile reads a file and returns its base64 encoded content.
+func ReadFile(filepath string) ([]byte, error) {
+	return os.ReadFile(filepath)
 }
-*/

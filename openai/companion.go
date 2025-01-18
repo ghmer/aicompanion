@@ -3,12 +3,10 @@ package openai
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/ghmer/aicompanion/models"
@@ -100,43 +98,38 @@ func (companion *Companion) CreateMessageWithImages(role models.Role, input stri
 	return message
 }
 
-// ReadFile reads a file and returns its base64 encoded content.
-func (companion *Companion) ReadFile(filepath string) string {
-	file, err := os.ReadFile(filepath)
-	if err != nil {
-		companion.PrintError(err)
-		return ""
-	}
-
-	return base64.StdEncoding.EncodeToString(file)
-}
-
 // addmodels.Message adds the given models.Message to the conversation history.
 func (companion *Companion) AddMessage(message models.Message) {
 	companion.Conversation = append(companion.Conversation, message)
 }
 
+// ClearLine clears the current line if output is enabled in the configuration
 func (companion *Companion) ClearLine() {
 	if companion.Config.Output {
 		fmt.Print(terminal.ClearLine)
 	}
 }
 
+// Print prints the given content to the console with color and reset.
 func (companion *Companion) Print(content string) {
 	if companion.Config.Output {
 		fmt.Printf("%s%s%s", companion.Config.Color, content, terminal.Reset)
 	}
 }
+
+// Println prints the given content to the console with color and a newline character, then resets the color.
 func (companion *Companion) Println(content string) {
 	if companion.Config.Output {
 		fmt.Printf("%s%s%s\n", companion.Config.Color, content, terminal.Reset)
 	}
 }
 
+// PrintError prints an error message to the console in red.
 func (companion *Companion) PrintError(err error) {
 	fmt.Printf("%s%v%s\n", terminal.Red, err, terminal.Reset)
 }
 
+// SendEmbeddingRequest sends a request to the OpenAI API to generate embeddings for a given text input.
 func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingRequest) (models.EmbeddingResponse, error) {
 	var embeddingResponse models.EmbeddingResponse
 
@@ -197,6 +190,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	return embeddingResponse, nil
 }
 
+// convertToModelEmbeddingResponse converts the OpenAI API response to a models.EmbeddingResponse.
 func (companion *Companion) convertToModelEmbeddingResponse(response EmbeddingResponse) models.EmbeddingResponse {
 	var embeddings [][]float64
 	for _, embedding := range response.Data {
@@ -204,20 +198,18 @@ func (companion *Companion) convertToModelEmbeddingResponse(response EmbeddingRe
 	}
 
 	return models.EmbeddingResponse{
-		Model:           response.Model,
-		Embeddings:      embeddings,
-		PromptEvalCount: response.Usage.TotalTokens,
+		Model:            response.Model,
+		Embeddings:       embeddings,
+		OriginalResponse: response,
 	}
 }
 
-func (companion *Companion) RequestModeration(message models.Message) (ModerationResponse, error) {
-	var moderationResponse ModerationResponse
-	var payload ModerationRequest = ModerationRequest{
-		Input: message.Content,
-	}
+// SendModerationRequest sends a request to the OpenAI API to moderate a given text input.
+func (companion *Companion) SendModerationRequest(moderationRequest models.ModerationRequest) (models.ModerationResponse, error) {
+	var moderationResponse models.ModerationResponse
 
 	// Marshal the payload into JSON
-	payloadBytes, err := json.Marshal(payload)
+	payloadBytes, err := json.Marshal(moderationRequest)
 	if err != nil {
 		companion.PrintError(err)
 		return moderationResponse, err
@@ -261,15 +253,23 @@ func (companion *Companion) RequestModeration(message models.Message) (Moderatio
 		return moderationResponse, err
 	}
 
-	err = json.Unmarshal(responseBytes, &moderationResponse)
+	var originalResponse ModerationResponse
+	err = json.Unmarshal(responseBytes, &originalResponse)
 	if err != nil {
 		companion.PrintError(err)
 		return moderationResponse, err
 	}
 
+	moderationResponse = models.ModerationResponse{
+		ID:               originalResponse.ID,
+		Model:            originalResponse.Model,
+		OriginalResponse: originalResponse,
+	}
+
 	return moderationResponse, nil
 }
 
+// SendCompletionRequest sends a request to the OpenAI API to generate a completion for a given prompt.
 func (companion *Companion) SendCompletionRequest(message models.Message) (models.Message, error) {
 	companion.AddMessage(message)
 	var result models.Message

@@ -3,12 +3,11 @@ package ollama
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/ghmer/aicompanion/models"
@@ -100,43 +99,43 @@ func (companion *Companion) CreateMessageWithImages(role models.Role, input stri
 	return message
 }
 
-// ReadFile reads a file and returns its base64 encoded content.
-func (companion *Companion) ReadFile(filepath string) string {
-	file, err := os.ReadFile(filepath)
-	if err != nil {
-		companion.PrintError(err)
-		return ""
-	}
-
-	return base64.StdEncoding.EncodeToString(file)
-}
-
 // addMessage adds the given message to the conversation history.
 func (companion *Companion) AddMessage(message models.Message) {
 	companion.Conversation = append(companion.Conversation, message)
 }
 
+// ClearLine clears the current line if output is enabled in the configuration.
 func (companion *Companion) ClearLine() {
 	if companion.Config.Output {
 		fmt.Print(terminal.ClearLine)
 	}
 }
 
+// Print prints the given content with the specified color and reset code if output is enabled in the configuration.
 func (companion *Companion) Print(content string) {
 	if companion.Config.Output {
 		fmt.Printf("%s%s%s", companion.Config.Color, content, terminal.Reset)
 	}
 }
+
+// Println prints the given content with the specified color and reset code followed by a newline character if output is enabled in the configuration.
 func (companion *Companion) Println(content string) {
 	if companion.Config.Output {
 		fmt.Printf("%s%s%s\n", companion.Config.Color, content, terminal.Reset)
 	}
 }
 
+// PrintError prints an error message with the specified color and reset code followed by a newline character.
 func (companion *Companion) PrintError(err error) {
 	fmt.Printf("%s%v%s\n", terminal.Red, err, terminal.Reset)
 }
 
+// SendModerationRequest sends a request to the OpenAI API to moderate a given text input.
+func (companion *Companion) SendModerationRequest(moderationRequest models.ModerationRequest) (models.ModerationResponse, error) {
+	return models.ModerationResponse{}, errors.New("unsupported")
+}
+
+// SendEmbeddingRequest sends an embedding request to the server using the provided embedding request object.
 func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingRequest) (models.EmbeddingResponse, error) {
 	var embeddingResponse models.EmbeddingResponse
 
@@ -185,10 +184,17 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 		return embeddingResponse, err
 	}
 
-	err = json.Unmarshal(responseBytes, &embeddingResponse)
+	var originalResponse EmbeddingResponse
+	err = json.Unmarshal(responseBytes, &originalResponse)
 	if err != nil {
 		companion.PrintError(err)
 		return embeddingResponse, err
+	}
+
+	embeddingResponse = models.EmbeddingResponse{
+		Model:            originalResponse.Model,
+		Embeddings:       originalResponse.Embeddings,
+		OriginalResponse: originalResponse,
 	}
 
 	return embeddingResponse, nil
