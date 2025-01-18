@@ -1,4 +1,4 @@
-package main
+package companion
 
 import (
 	"fmt"
@@ -14,6 +14,7 @@ import (
 type AICompanion interface {
 	PrepareConversation() []models.Message
 	CreateMessage(role models.Role, input string) models.Message
+	CreateMessageWithImages(role models.Role, message string, images []models.Base64Image) models.Message
 	ReadFile(filepath string) string
 	AddMessage(message models.Message)
 	HandleStreamResponse(resp *http.Response) (models.Message, error)
