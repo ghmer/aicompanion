@@ -3,7 +3,6 @@ package companion_test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,15 +15,12 @@ import (
 
 func TestAICompanion(t *testing.T) {
 	// Prepare configuration for the AI Companion
-	fmt.Println("START")
 	config := models.Configuration{
 		AIType:            models.Chat,
 		AiModel:           "mock-model",
 		HTTPClientTimeout: 5,
 		ApiProvider:       models.OpenAI,
 	}
-
-	fmt.Println("CONFIG: ", config)
 
 	// Create a new AI Companion instance
 	companion := companion.NewCompanion(config)
@@ -177,7 +173,6 @@ func TestAICompanion(t *testing.T) {
 		}))
 
 		defer mockCompletionServer.Close()
-		fmt.Println(mockCompletionServer.URL)
 
 		config.ApiGenerateURL = mockCompletionServer.URL
 		companion.SetConfig(config)
@@ -244,7 +239,6 @@ func TestAICompanion(t *testing.T) {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(mockEmbeddingResponse)
-			fmt.Println(mockEmbeddingResponse)
 		}))
 		defer mockEmbeddingServer.Close()
 
@@ -256,7 +250,6 @@ func TestAICompanion(t *testing.T) {
 			t.Fatalf("SendEmbeddingRequest returned an error: %v", err)
 		}
 		if len(response.Embeddings) != 1 {
-			fmt.Println("SIZE: ", len(response.Embeddings), response)
 			t.Errorf("Expected 1 embedding, got %d", len(response.Embeddings))
 		}
 	})

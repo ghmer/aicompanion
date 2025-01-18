@@ -1,7 +1,6 @@
 package companion
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -36,7 +35,6 @@ type AICompanion interface {
 func NewCompanion(config models.Configuration) AICompanion {
 	switch config.ApiProvider {
 	case models.Ollama:
-		fmt.Println("ollama")
 		return &ollama.Companion{
 			Config: config,
 			SystemRole: models.Message{
@@ -47,7 +45,6 @@ func NewCompanion(config models.Configuration) AICompanion {
 			Client:       &http.Client{Timeout: time.Second * time.Duration(config.HTTPClientTimeout)},
 		}
 	case models.OpenAI:
-		fmt.Println("openai")
 		return &openai.Companion{
 			Config: config,
 			SystemRole: models.Message{
