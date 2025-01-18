@@ -89,6 +89,17 @@ func (companion *Companion) CreateMessage(role models.Role, input string) models
 	return message
 }
 
+// CreateMessageWithImages creates a new message with the given role, content and images
+func (companion *Companion) CreateMessageWithImages(role models.Role, input string, images []models.Base64Image) models.Message {
+	var message models.Message = models.Message{
+		Role:    role,
+		Content: input,
+		Images:  images,
+	}
+
+	return message
+}
+
 // ReadFile reads a file and returns its base64 encoded content.
 func (companion *Companion) ReadFile(filepath string) string {
 	file, err := os.ReadFile(filepath)

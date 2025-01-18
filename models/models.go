@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -71,13 +72,14 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 	// If AIType is Chat, validate and set default URLs if not provided
 	if config.AIType == Chat {
 		if config.ApiChatURL == "" {
-			fmt.Println("using default url for chat api")
+			fmt.Print("using default url for chat api: ")
 			if config.ApiProvider == Ollama {
 				config.ApiChatURL = "http://localhost:11434/api/chat"
 			}
 			if config.ApiProvider == OpenAI {
 				config.ApiChatURL = "https://api.openai.com/v1/chat/completions"
 			}
+			fmt.Println(config.ApiChatURL)
 		}
 
 		// Ensure URL starts with http:// or https://
@@ -85,15 +87,16 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 			return nil, errors.New("invalid configuration: ApiChatURL must start with http:// or https://")
 		}
 
-		// If AIType is Chat, validate and set default URLs if not provided
+		// If AIType is Generate, validate and set default URLs if not provided
 		if config.ApiGenerateURL == "" {
-			fmt.Println("using default url for chat api")
+			fmt.Print("using default url for generate api: ")
 			if config.ApiProvider == Ollama {
 				config.ApiGenerateURL = "http://localhost:11434/api/generate"
 			}
 			if config.ApiProvider == OpenAI {
 				config.ApiGenerateURL = "https://api.openai.com/v1/completions"
 			}
+			fmt.Println(config.ApiGenerateURL)
 		}
 
 		// Ensure URL starts with http:// or https://
@@ -105,13 +108,14 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 	// If AIType is Embed, validate and set default URLs if not provided
 	if config.AIType == Embed {
 		if config.ApiEmbedURL == "" {
-			fmt.Println("using default url for chat api")
+			fmt.Print("using default url for embed api: ")
 			if config.ApiProvider == Ollama {
 				config.ApiEmbedURL = "http://localhost:11434/api/embed"
 			}
 			if config.ApiProvider == OpenAI {
 				config.ApiEmbedURL = "https://api.openai.com/v1/embeddings"
 			}
+			fmt.Println(config.ApiEmbedURL)
 		}
 
 		// Ensure URL starts with http:// or https://
@@ -123,13 +127,14 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 	// If AIType is Moderation, validate and set default URLs if not provided
 	if config.AIType == Moderation {
 		if config.ApiModerationURL == "" {
-			fmt.Println("using default url for chat api")
+			fmt.Print("using default url for moderation api: ")
 			if config.ApiProvider == Ollama {
 				config.ApiModerationURL = "http://localhost:11434/api/moderate"
 			}
 			if config.ApiProvider == OpenAI {
 				config.ApiModerationURL = "https://api.openai.com/v1/moderations"
 			}
+			fmt.Println(config.ApiModerationURL)
 		}
 
 		// Ensure URL starts with http:// or https://
@@ -159,9 +164,26 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 
 // Message represents an individual message in the chat.
 type Message struct {
-	Role    Role     `json:"role"`             // Role of the message (user, assistant, system)
-	Content string   `json:"content"`          // Content of the message
-	Images  []string `json:"images,omitempty"` // Images associated with the message
+	Role    Role          `json:"role"`             // Role of the message (user, assistant, system)
+	Content string        `json:"content"`          // Content of the message
+	Images  []Base64Image `json:"images,omitempty"` // Images associated with the message
+}
+
+type Base64Image struct {
+	Data string
+}
+
+func (image *Base64Image) SetData(data []byte) {
+	image.Data = base64.StdEncoding.EncodeToString(data)
+}
+
+func (image *Base64Image) GetData(data []byte) ([]byte, error) {
+	return base64.StdEncoding.DecodeString(image.Data)
+}
+
+// MarshalJSON custom marshals Base64Image as a single string.
+func (b Base64Image) MarshalJSON() ([]byte, error) {
+	return json.Marshal(b.Data)
 }
 
 // ApiProvider indicates the type of response expected.
