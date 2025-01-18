@@ -1,11 +1,11 @@
-package companion_test
+package aicompanion_test
 
 import (
 	"net/http"
 	"testing"
 	"time"
 
-	"github.com/ghmer/aicompanion/companion"
+	"github.com/ghmer/aicompanion/aicompanion"
 	"github.com/ghmer/aicompanion/models"
 )
 
@@ -19,7 +19,7 @@ func TestAICompanion(t *testing.T) {
 	}
 
 	// Create a new AI Companion instance
-	companion := companion.NewCompanion(config)
+	companion := aicompanion.NewCompanion(config)
 
 	t.Run("Test PrepareConversation", func(t *testing.T) {
 		messages := companion.PrepareConversation()

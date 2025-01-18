@@ -1,4 +1,4 @@
-package companion
+package aicompanion
 
 import (
 	"encoding/base64"
