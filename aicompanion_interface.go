@@ -54,7 +54,7 @@ type AICompanion interface {
 	SendChatRequest(message models.Message) (models.Message, error)
 
 	// SendCompletionRequest sends a completion request to an AI model and returns a response message
-	SendCompletionRequest(message models.Message) (models.Message, error)
+	SendGenerateRequest(message models.Message) (models.Message, error)
 
 	// SendEmbeddingRequest sends an embedding request to an AI model and returns a response
 	SendEmbeddingRequest(embedding models.EmbeddingRequest) (models.EmbeddingResponse, error)

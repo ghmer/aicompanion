@@ -269,8 +269,8 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 	return moderationResponse, nil
 }
 
-// SendCompletionRequest sends a request to the OpenAI API to generate a completion for a given prompt.
-func (companion *Companion) SendCompletionRequest(message models.Message) (models.Message, error) {
+// SendGenerateRequest sends a request to the OpenAI API to generate a completion for a given prompt.
+func (companion *Companion) SendGenerateRequest(message models.Message) (models.Message, error) {
 	companion.AddMessage(message)
 	var result models.Message
 	var payload CompletionsRequest = CompletionsRequest{
