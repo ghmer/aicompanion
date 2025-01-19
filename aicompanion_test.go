@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ghmer/aicompanion/aicompanion"
+	"github.com/ghmer/aicompanion"
 	"github.com/ghmer/aicompanion/models"
 )
 
