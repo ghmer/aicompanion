@@ -7,32 +7,14 @@ import (
 
 	"github.com/ghmer/aicompanion"
 	"github.com/ghmer/aicompanion/models"
-	"github.com/ghmer/aicompanion/terminal"
 )
 
 func TestAICompanion(t *testing.T) {
 	// Prepare configuration for the AI Companion
-	config := models.Configuration{
-		AiModel:           "mock-model",
-		HTTPClientTimeout: 5,
-		ApiProvider:       models.Ollama,
-	}
+	config := aicompanion.NewDefaultConfig(models.Ollama, "", "mock-model")
 
 	// Create a new AI Companion instance
-	companion := aicompanion.NewCompanion(models.Configuration{
-		AiModel:           "llama3.2:latest",
-		ApiChatURL:        "http://localhost:11434/api/chat",
-		ApiGenerateURL:    "http://localhost:11434/api/generate",
-		ApiEmbedURL:       "http://localhost:11434/api/embed",
-		MaxInputLength:    500,
-		HTTPClientTimeout: 300,
-		BufferSize:        1024,
-		ApiProvider:       "Ollama",
-		ApiKey:            "",
-		MaxMessages:       20,
-		Color:             terminal.Green,
-		Output:            false,
-	})
+	companion := aicompanion.NewCompanion(*config)
 
 	companion.SetSystemRole("you are a helpful assistant")
 
@@ -77,9 +59,9 @@ func TestAICompanion(t *testing.T) {
 	})
 
 	t.Run("Test SetConfig", func(t *testing.T) {
-		newConfig := config
+		newConfig := aicompanion.NewDefaultConfig(models.Ollama, "", "updated-model")
 		newConfig.AiModel = "updated-model"
-		companion.SetConfig(newConfig)
+		companion.SetConfig(*newConfig)
 		if companion.GetConfig().AiModel != "updated-model" {
 			t.Errorf("Expected updated model 'updated-model', got '%s'", companion.GetConfig().AiModel)
 		}

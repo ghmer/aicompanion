@@ -8,6 +8,7 @@ import (
 	"github.com/ghmer/aicompanion/models"
 	"github.com/ghmer/aicompanion/ollama"
 	"github.com/ghmer/aicompanion/openai"
+	"github.com/ghmer/aicompanion/terminal"
 	"github.com/ghmer/aicompanion/utility"
 )
 
@@ -99,6 +100,41 @@ func NewCompanion(config models.Configuration) AICompanion {
 	}
 }
 
+// NewDefaultConfig creates a new default configuration with the provided API provider, API token, and model.
+func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, model string) *models.Configuration {
+	var config models.Configuration = models.Configuration{
+		ApiProvider:       apiProvider,
+		ApiKey:            "",
+		AiModel:           model,
+		ApiChatURL:        "http://localhost:11434/api/chat",
+		ApiGenerateURL:    "http://localhost:11434/api/generate",
+		ApiEmbedURL:       "http://localhost:11434/api/embed",
+		MaxInputLength:    500,
+		HTTPClientTimeout: 300,
+		BufferSize:        2048,
+		MaxMessages:       20,
+		Color:             terminal.Green,
+		Output:            true,
+	}
+
+	switch apiProvider {
+	case models.Ollama:
+		config.ApiChatURL = "http://localhost:11434/api/chat"
+		config.ApiGenerateURL = "http://localhost:11434/api/generate"
+		config.ApiEmbedURL = "http://localhost:11434/api/embed"
+		config.ApiModerationURL = "http://localhost:11434/api/generate"
+
+	case models.OpenAI:
+		config.ApiChatURL = "https://api.openai.com/v1/chat/completions"
+		config.ApiGenerateURL = "https://api.openai.com/v1/completions"
+		config.ApiEmbedURL = "https://api.openai.com/v1/embeddings"
+		config.ApiModerationURL = "https://api.openai.com/v1/moderations"
+	}
+
+	return &config
+}
+
+// ReadImageFromFile reads an image from the specified filepath and returns a Base64 encoded image.
 func ReadImageFromFile(filepath string) (models.Base64Image, error) {
 	content, err := utility.ReadFile(filepath)
 	if err != nil {
