@@ -13,7 +13,6 @@ import (
 
 // Configuration represents the configuration for the application.
 type Configuration struct {
-	AIType            AIType      `json:"ai_type"`             // AI interaction type (chat, embed, moderation)
 	AiModel           string      `json:"ai_model"`            // Specific AI model to use
 	ApiChatURL        string      `json:"api_chat_url"`        // URL for chat API
 	ApiGenerateURL    string      `json:"api_generate_url"`    // URL for generate API
@@ -45,11 +44,6 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 	}
 
 	// Perform sanitization
-
-	if config.AIType == "" {
-		return nil, errors.New("invalid configuration: AIType is required")
-	}
-
 	if config.AiModel == "" {
 		return nil, errors.New("invalid configuration: AiModel is required")
 	}
@@ -69,78 +63,70 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 		config.ApiProvider = "Ollama" // Default api provider
 	}
 
-	// If AIType is Chat, validate and set default URLs if not provided
-	if config.AIType == Chat {
-		if config.ApiChatURL == "" {
-			fmt.Print("using default url for chat api: ")
-			if config.ApiProvider == Ollama {
-				config.ApiChatURL = "http://localhost:11434/api/chat"
-			}
-			if config.ApiProvider == OpenAI {
-				config.ApiChatURL = "https://api.openai.com/v1/chat/completions"
-			}
-			fmt.Println(config.ApiChatURL)
+	// set default urls if no custom ones were provided
+	if config.ApiChatURL == "" {
+		fmt.Print("using default url for chat api: ")
+		if config.ApiProvider == Ollama {
+			config.ApiChatURL = "http://localhost:11434/api/chat"
 		}
-
-		// Ensure URL starts with http:// or https://
-		if !strings.HasPrefix(config.ApiChatURL, "http://") && !strings.HasPrefix(config.ApiChatURL, "https://") {
-			return nil, errors.New("invalid configuration: ApiChatURL must start with http:// or https://")
+		if config.ApiProvider == OpenAI {
+			config.ApiChatURL = "https://api.openai.com/v1/chat/completions"
 		}
-
-		// If AIType is Generate, validate and set default URLs if not provided
-		if config.ApiGenerateURL == "" {
-			fmt.Print("using default url for generate api: ")
-			if config.ApiProvider == Ollama {
-				config.ApiGenerateURL = "http://localhost:11434/api/generate"
-			}
-			if config.ApiProvider == OpenAI {
-				config.ApiGenerateURL = "https://api.openai.com/v1/completions"
-			}
-			fmt.Println(config.ApiGenerateURL)
-		}
-
-		// Ensure URL starts with http:// or https://
-		if !strings.HasPrefix(config.ApiGenerateURL, "http://") && !strings.HasPrefix(config.ApiGenerateURL, "https://") {
-			return nil, errors.New("invalid configuration: ApiGenerateURL must start with http:// or https://")
-		}
+		fmt.Println(config.ApiChatURL)
 	}
 
-	// If AIType is Embed, validate and set default URLs if not provided
-	if config.AIType == Embed {
-		if config.ApiEmbedURL == "" {
-			fmt.Print("using default url for embed api: ")
-			if config.ApiProvider == Ollama {
-				config.ApiEmbedURL = "http://localhost:11434/api/embed"
-			}
-			if config.ApiProvider == OpenAI {
-				config.ApiEmbedURL = "https://api.openai.com/v1/embeddings"
-			}
-			fmt.Println(config.ApiEmbedURL)
-		}
-
-		// Ensure URL starts with http:// or https://
-		if !strings.HasPrefix(config.ApiEmbedURL, "http://") && !strings.HasPrefix(config.ApiEmbedURL, "https://") {
-			return nil, errors.New("invalid configuration: ApiEmbedURL must start with http:// or https://")
-		}
+	// Ensure URL starts with http:// or https://
+	if !strings.HasPrefix(config.ApiChatURL, "http://") && !strings.HasPrefix(config.ApiChatURL, "https://") {
+		return nil, errors.New("invalid configuration: ApiChatURL must start with http:// or https://")
 	}
 
-	// If AIType is Moderation, validate and set default URLs if not provided
-	if config.AIType == Moderation {
-		if config.ApiModerationURL == "" {
-			fmt.Print("using default url for moderation api: ")
-			if config.ApiProvider == Ollama {
-				config.ApiModerationURL = "http://localhost:11434/api/moderate"
-			}
-			if config.ApiProvider == OpenAI {
-				config.ApiModerationURL = "https://api.openai.com/v1/moderations"
-			}
-			fmt.Println(config.ApiModerationURL)
+	// If AIType is Generate, validate and set default URLs if not provided
+	if config.ApiGenerateURL == "" {
+		fmt.Print("using default url for generate api: ")
+		if config.ApiProvider == Ollama {
+			config.ApiGenerateURL = "http://localhost:11434/api/generate"
 		}
+		if config.ApiProvider == OpenAI {
+			config.ApiGenerateURL = "https://api.openai.com/v1/completions"
+		}
+		fmt.Println(config.ApiGenerateURL)
+	}
 
-		// Ensure URL starts with http:// or https://
-		if !strings.HasPrefix(config.ApiModerationURL, "http://") && !strings.HasPrefix(config.ApiModerationURL, "https://") {
-			return nil, errors.New("invalid configuration: ApiModerationURL must start with http:// or https://")
+	// Ensure URL starts with http:// or https://
+	if !strings.HasPrefix(config.ApiGenerateURL, "http://") && !strings.HasPrefix(config.ApiGenerateURL, "https://") {
+		return nil, errors.New("invalid configuration: ApiGenerateURL must start with http:// or https://")
+	}
+
+	if config.ApiEmbedURL == "" {
+		fmt.Print("using default url for embed api: ")
+		if config.ApiProvider == Ollama {
+			config.ApiEmbedURL = "http://localhost:11434/api/embed"
 		}
+		if config.ApiProvider == OpenAI {
+			config.ApiEmbedURL = "https://api.openai.com/v1/embeddings"
+		}
+		fmt.Println(config.ApiEmbedURL)
+	}
+
+	// Ensure URL starts with http:// or https://
+	if !strings.HasPrefix(config.ApiEmbedURL, "http://") && !strings.HasPrefix(config.ApiEmbedURL, "https://") {
+		return nil, errors.New("invalid configuration: ApiEmbedURL must start with http:// or https://")
+	}
+
+	if config.ApiModerationURL == "" {
+		fmt.Print("using default url for moderation api: ")
+		if config.ApiProvider == Ollama {
+			config.ApiModerationURL = "http://localhost:11434/api/moderate"
+		}
+		if config.ApiProvider == OpenAI {
+			config.ApiModerationURL = "https://api.openai.com/v1/moderations"
+		}
+		fmt.Println(config.ApiModerationURL)
+	}
+
+	// Ensure URL starts with http:// or https://
+	if !strings.HasPrefix(config.ApiModerationURL, "http://") && !strings.HasPrefix(config.ApiModerationURL, "https://") {
+		return nil, errors.New("invalid configuration: ApiModerationURL must start with http:// or https://")
 	}
 
 	if config.MaxInputLength <= 0 {
@@ -195,15 +181,6 @@ type ApiProvider string
 const (
 	OpenAI = "OpenAI" // OpenAI model type
 	Ollama = "Ollama" // Ollama model type
-)
-
-// AIType indicates the type of AI interaction, either chat or generate.
-type AIType string
-
-const (
-	Chat       AIType = "chat"       // Chat completion type
-	Embed      AIType = "embed"      // Embedding type
-	Moderation AIType = "moderation" // Moderation type
 )
 
 // Role represents a role in a conversation, such as user, assistant, or system.

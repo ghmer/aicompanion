@@ -69,10 +69,8 @@ func (companion *Companion) SetClient(client *http.Client) {
 // prepareConversation prepares the conversation by appending system role and current conversation messages.
 func (companion *Companion) PrepareConversation() []models.Message {
 	messages := append([]models.Message{companion.SystemRole}, companion.Conversation...)
-	if companion.Config.AIType == models.Chat {
-		if len(messages) > companion.Config.MaxMessages {
-			messages = messages[len(messages)-companion.Config.MaxMessages:]
-		}
+	if len(messages) > companion.Config.MaxMessages {
+		messages = messages[len(messages)-companion.Config.MaxMessages:]
 	}
 
 	return messages

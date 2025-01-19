@@ -13,7 +13,6 @@ import (
 func TestAICompanion(t *testing.T) {
 	// Prepare configuration for the AI Companion
 	config := models.Configuration{
-		AIType:            models.Chat,
 		AiModel:           "mock-model",
 		HTTPClientTimeout: 5,
 		ApiProvider:       models.Ollama,

@@ -107,6 +107,35 @@ Helping you with care and ease
 Friendly, here to aid
 ```
 
+### image recognition
+
+```golang
+func main() {
+    companion := aicompanion.NewCompanion(models.Configuration{
+        AiModel:           "llama3.2-vision:latest",
+        ApiChatURL:        "http://localhost:11434/api/chat",
+        ApiGenerateURL:    "http://localhost:11434/api/generate",
+        ApiEmbedURL:       "http://localhost:11434/api/embed",
+        MaxInputLength:    500,
+        HTTPClientTimeout: 300,
+        BufferSize:        2048,
+        ApiProvider:       "Ollama",
+        ApiKey:            "",
+        MaxMessages:       20,
+        Color:             terminal.Green,
+        Output:            true,
+    })
+
+    companion.SetSystemRole("you are a helpful assistant")
+
+    image, err := aicompanion.ReadImageFromFile("/path/to/image.jpg")
+    if err != nil {
+        log.Fatal(err)
+    }
+    companion.SendGenerateRequest(companion.CreateMessageWithImages(models.User, "describe in detail what you can see in this image.", []models.Base64Image{image}))
+}
+```
+
 ### ai vs ai
 
 ```golang
