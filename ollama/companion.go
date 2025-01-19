@@ -249,7 +249,7 @@ func (companion *Companion) SendChatRequest(message models.Message) (models.Mess
 	}
 
 	// Process the streaming response
-	result, err = companion.HandleStreamResponse(resp)
+	result, err = companion.HandleStreamResponse(resp, Chat)
 	if err != nil {
 		companion.PrintError(err)
 	}
@@ -307,7 +307,7 @@ func (companion *Companion) SendCompletionRequest(message models.Message) (model
 	}
 
 	// Process the streaming response
-	result, err = companion.HandleStreamResponse(resp)
+	result, err = companion.HandleStreamResponse(resp, Generate)
 	if err != nil {
 		companion.PrintError(err)
 	}
@@ -316,8 +316,15 @@ func (companion *Companion) SendCompletionRequest(message models.Message) (model
 	return result, nil
 }
 
+type StreamType int
+
+const (
+	Generate StreamType = 1
+	Chat     StreamType = 2
+)
+
 // handleStreamResponse handles the streaming response from the API.
-func (companion *Companion) HandleStreamResponse(resp *http.Response) (models.Message, error) {
+func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType StreamType) (models.Message, error) {
 	var message strings.Builder
 	var result models.Message
 	if resp.StatusCode != http.StatusOK {
@@ -348,9 +355,16 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response) (models.Me
 					break
 				}
 
-				// Print the content from each choice in the chunk
-				message.WriteString(responseObject.Message.Content)
-				companion.Print(responseObject.Message.Content)
+				switch streamType {
+				case Chat:
+					// Print the content from each choice in the chunk
+					message.WriteString(responseObject.Message.Content)
+					companion.Print(responseObject.Message.Content)
+				case Generate:
+					// Print the content from each choice in the chunk
+					message.WriteString(responseObject.Response)
+					companion.Print(responseObject.Response)
+				}
 
 				if responseObject.Done {
 					result = companion.CreateMessage(models.Assistant, message.String())

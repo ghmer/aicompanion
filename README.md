@@ -74,6 +74,39 @@ The configuration file is a JSON file that contains the following properties:
 
 ## Examples
 
+### basic usage
+
+```golang
+func main() {
+    companion := aicompanion.NewCompanion(models.Configuration{
+        ApiProvider:       "Ollama",
+        ApiKey:            "",
+        AiModel:           "llama3.1:8b",
+        AIType:            "chat",
+        ApiChatURL:        "http://localhost:11434/api/chat",
+        ApiGenerateURL:    "http://localhost:11434/api/generate",
+        ApiEmbedURL:       "http://localhost:11434/api/embed",
+        ApiModerationURL:  "http://localhost:11434/api/moderation",
+        MaxInputLength:    500,
+        HTTPClientTimeout: 300,
+        BufferSize:        1024,
+        MaxMessages:       20,
+        Color:             terminal.Green,
+        Output:            true,
+    })
+
+    companion.SetSystemRole("you are a helpful assistant that only replies in haikus")
+    companion.SendChatRequest(companion.CreateMessage(models.User, "hi! Who are you?"))
+}
+```
+
+```console
+% go run main.go 
+> Assistant at hand
+Helping you with care and ease
+Friendly, here to aid
+```
+
 ### ai vs ai
 
 ```golang

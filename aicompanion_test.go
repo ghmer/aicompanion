@@ -7,6 +7,7 @@ import (
 
 	"github.com/ghmer/aicompanion"
 	"github.com/ghmer/aicompanion/models"
+	"github.com/ghmer/aicompanion/terminal"
 )
 
 func TestAICompanion(t *testing.T) {
@@ -15,15 +16,30 @@ func TestAICompanion(t *testing.T) {
 		AIType:            models.Chat,
 		AiModel:           "mock-model",
 		HTTPClientTimeout: 5,
-		ApiProvider:       models.OpenAI,
+		ApiProvider:       models.Ollama,
 	}
 
 	// Create a new AI Companion instance
-	companion := aicompanion.NewCompanion(config)
+	companion := aicompanion.NewCompanion(models.Configuration{
+		AiModel:           "llama3.2:latest",
+		ApiChatURL:        "http://localhost:11434/api/chat",
+		ApiGenerateURL:    "http://localhost:11434/api/generate",
+		ApiEmbedURL:       "http://localhost:11434/api/embed",
+		MaxInputLength:    500,
+		HTTPClientTimeout: 300,
+		BufferSize:        1024,
+		ApiProvider:       "Ollama",
+		ApiKey:            "",
+		MaxMessages:       20,
+		Color:             terminal.Green,
+		Output:            false,
+	})
+
+	companion.SetSystemRole("you are a helpful assistant")
 
 	t.Run("Test PrepareConversation", func(t *testing.T) {
 		messages := companion.PrepareConversation()
-		if len(messages) != 0 {
+		if len(messages) != 1 {
 			t.Errorf("Expected empty conversation, got %d messages", len(messages))
 		}
 	})

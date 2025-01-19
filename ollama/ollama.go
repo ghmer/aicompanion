@@ -35,13 +35,18 @@ type CompletionResponse struct {
 	Model              string         `json:"model"`
 	CreatedAt          time.Time      `json:"created_at"`
 	Done               bool           `json:"done"`
-	Message            models.Message `json:"message"`
+	DoneReason         string         `json:"done_reason,omitempty"`
+	Message            models.Message `json:"message,omitempty"`
+	Response           string         `json:"response,omitempty"`
 	TotalDuration      int64          `json:"total_duration"`
 	LoadDuration       int64          `json:"load_duration"`
 	PromptEvalCount    int            `json:"prompt_eval_count"`
 	PromptEvalDuration int64          `json:"prompt_eval_duration"`
 	EvalCount          int            `json:"eval_count"`
 	EvalDuration       int64          `json:"eval_duration"`
+	// Context is an encoding of the conversation used in this response; this
+	// can be sent in the next request to keep a conversational memory.
+	Context []int `json:"context,omitempty"`
 }
 
 // CreateModelRequest represents the request structure for the /api/models/create endpoint.
