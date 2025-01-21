@@ -211,7 +211,7 @@ const (
 // EmbeddingResponse represents the response payload from generating embeddings.
 type EmbeddingResponse struct {
 	Model            string      `json:"model"`             // Model used for embedding
-	Embeddings       [][]float64 `json:"embeddings"`        // Generated embeddings
+	Embeddings       [][]float32 `json:"embeddings"`        // Generated embeddings
 	OriginalResponse any         `json:"original-response"` // the original response of the API call.
 }
 

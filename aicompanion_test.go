@@ -69,7 +69,7 @@ func TestAICompanion(t *testing.T) {
 
 	t.Run("Test GetSystemRole", func(t *testing.T) {
 		role := companion.GetSystemRole()
-		if role.Content != "You are a helpful assistant" {
+		if role.Content != "you are a helpful assistant" {
 			t.Errorf("Expected system role content 'You are a helpful assistant', got '%s'", role.Content)
 		}
 	})

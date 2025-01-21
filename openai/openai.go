@@ -27,8 +27,8 @@ type CompletionsRequest struct {
 	Model       string   `json:"model"`
 	Prompt      string   `json:"prompt"`
 	MaxTokens   int      `json:"max_tokens"`
-	Temperature float64  `json:"temperature"`
-	TopP        float64  `json:"top_p"`
+	Temperature float32  `json:"temperature"`
+	TopP        float32  `json:"top_p"`
 	N           int      `json:"n"`
 	Stream      bool     `json:"stream"`
 	Stop        []string `json:"stop"`
@@ -38,7 +38,7 @@ type CompletionsRequest struct {
 type Choice struct {
 	Delta        Delta   `json:"delta"`
 	Index        int     `json:"index"`
-	LogProbs     float64 `json:"logprobs,omitempty"`
+	LogProbs     float32 `json:"logprobs,omitempty"`
 	FinishReason string  `json:"finish_reason,omitempty"`
 }
 
@@ -80,7 +80,7 @@ type ChatRequest struct {
 	Model       string           `json:"model"`
 	Messages    []models.Message `json:"messages"`
 	MaxTokens   int              `json:"max_tokens,omitempty"`
-	Temperature float64          `json:"temperature,omitempty"`
+	Temperature float32          `json:"temperature,omitempty"`
 	Stream      bool             `json:"stream,omitempty"`
 }
 
@@ -124,7 +124,7 @@ type EmbeddingResponse struct {
 // Embedding represents a single embedding vector.
 type Embedding struct {
 	Object    string    `json:"object"`
-	Embedding []float64 `json:"embedding"`
+	Embedding []float32 `json:"embedding"`
 	Index     int       `json:"index"`
 }
 
@@ -182,15 +182,15 @@ type ModerationCategories struct {
 
 // ModerationCategoryScores represents the scores for each moderation category.
 type ModerationCategoryScores struct {
-	Sexual                float64 `json:"sexual"`
-	Hate                  float64 `json:"hate"`
-	Harassment            float64 `json:"harassment"`
-	SelfHarm              float64 `json:"self-harm"`
-	SexualMinors          float64 `json:"sexual/minors"`
-	HateThreatening       float64 `json:"hate/threatening"`
-	ViolenceGraphic       float64 `json:"violence/graphic"`
-	SelfHarmIntent        float64 `json:"self-harm/intent"`
-	SelfHarmInstructions  float64 `json:"self-harm/instructions"`
-	HarassmentThreatening float64 `json:"harassment/threatening"`
-	Violence              float64 `json:"violence"`
+	Sexual                float32 `json:"sexual"`
+	Hate                  float32 `json:"hate"`
+	Harassment            float32 `json:"harassment"`
+	SelfHarm              float32 `json:"self-harm"`
+	SexualMinors          float32 `json:"sexual/minors"`
+	HateThreatening       float32 `json:"hate/threatening"`
+	ViolenceGraphic       float32 `json:"violence/graphic"`
+	SelfHarmIntent        float32 `json:"self-harm/intent"`
+	SelfHarmInstructions  float32 `json:"self-harm/instructions"`
+	HarassmentThreatening float32 `json:"harassment/threatening"`
+	Violence              float32 `json:"violence"`
 }

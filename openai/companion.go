@@ -190,7 +190,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 
 // convertToModelEmbeddingResponse converts the OpenAI API response to a models.EmbeddingResponse.
 func (companion *Companion) convertToModelEmbeddingResponse(response EmbeddingResponse) models.EmbeddingResponse {
-	var embeddings [][]float64
+	var embeddings [][]float32
 	for _, embedding := range response.Data {
 		embeddings = append(embeddings, embedding.Embedding)
 	}
