@@ -226,3 +226,10 @@ type ModerationResponse struct {
 	Model            string `json:"model"`
 	OriginalResponse any    `json:"results"`
 }
+
+type StreamType int
+
+const (
+	Generate StreamType = 1
+	Chat     StreamType = 2
+)

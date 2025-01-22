@@ -52,16 +52,18 @@ type AICompanion interface {
 
 	// interactions
 	// SendChatRequest sends a chat request to an AI model and returns a response message
-	SendChatRequest(message models.Message) (models.Message, error)
+	SendChatRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error)
 
 	// SendCompletionRequest sends a completion request to an AI model and returns a response message
-	SendGenerateRequest(message models.Message) (models.Message, error)
+	SendGenerateRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error)
 
 	// SendEmbeddingRequest sends an embedding request to an AI model and returns a response
 	SendEmbeddingRequest(embedding models.EmbeddingRequest) (models.EmbeddingResponse, error)
 
 	// SendModerationRequest sends a moderation request to an AI model and returns a response
 	SendModerationRequest(moderationRequest models.ModerationRequest) (models.ModerationResponse, error)
+
+	HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error)
 }
 
 // NewCompanion creates a new Companion instance with the provided configuration.

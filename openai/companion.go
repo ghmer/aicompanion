@@ -268,7 +268,7 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 }
 
 // SendGenerateRequest sends a request to the OpenAI API to generate a completion for a given prompt.
-func (companion *Companion) SendGenerateRequest(message models.Message) (models.Message, error) {
+func (companion *Companion) SendGenerateRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
 	companion.AddMessage(message)
 	var result models.Message
 	var payload CompletionsRequest = CompletionsRequest{
@@ -317,7 +317,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message) (models.
 	}
 
 	// Process the streaming response
-	result, err = companion.HandleStreamResponse(resp)
+	result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
 	if err != nil {
 		companion.PrintError(err)
 	}
@@ -327,7 +327,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message) (models.
 }
 
 // ProcessUserInput processes the user input by sending it to the API and handling the response.
-func (companion *Companion) SendChatRequest(message models.Message) (models.Message, error) {
+func (companion *Companion) SendChatRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
 	companion.AddMessage(message)
 	var result models.Message
 	var payload ChatRequest = ChatRequest{
@@ -375,7 +375,7 @@ func (companion *Companion) SendChatRequest(message models.Message) (models.Mess
 	}
 
 	// Process the streaming response
-	result, err = companion.HandleStreamResponse(resp)
+	result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
 	if err != nil {
 		companion.PrintError(err)
 	}
@@ -385,7 +385,7 @@ func (companion *Companion) SendChatRequest(message models.Message) (models.Mess
 }
 
 // handleStreamResponse handles the streaming response from the API.
-func (companion *Companion) HandleStreamResponse(resp *http.Response) (models.Message, error) {
+func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
 	var message strings.Builder
 	var result models.Message
 	if resp.StatusCode != http.StatusOK {
@@ -423,6 +423,12 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response) (models.Me
 				}
 
 				// Print the content from each choice in the chunk
+				msg := companion.CreateMessage(models.Assistant, responseObject.Choices[0].Delta.Content)
+				if callback != nil {
+					if err := callback(msg); err != nil {
+						companion.PrintError(err)
+					}
+				}
 				message.WriteString(responseObject.Choices[0].Delta.Content)
 				companion.Print(responseObject.Choices[0].Delta.Content)
 

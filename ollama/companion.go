@@ -199,13 +199,13 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 }
 
 // ProcessUserInput processes the user input by sending it to the API and handling the response.
-func (companion *Companion) SendChatRequest(message models.Message) (models.Message, error) {
+func (companion *Companion) SendChatRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
 	companion.AddMessage(message)
 	var result models.Message
 	var payload CompletionRequest = CompletionRequest{
 		Model:    string(companion.Config.AiModel),
 		Messages: companion.PrepareConversation(),
-		Stream:   true,
+		Stream:   streaming,
 	}
 
 	// Marshal the payload into JSON
@@ -247,24 +247,43 @@ func (companion *Companion) SendChatRequest(message models.Message) (models.Mess
 	}
 
 	// Process the streaming response
-	result, err = companion.HandleStreamResponse(resp, Chat)
-	if err != nil {
-		companion.PrintError(err)
+	if streaming {
+		result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
+		if err != nil {
+			companion.PrintError(err)
+		}
+	} else {
+		var bodyBytes []byte
+		bodyBytes, err = io.ReadAll(resp.Body)
+		if err != nil {
+			companion.PrintError(err)
+			return result, nil
+		}
+
+		var completionResponse CompletionResponse
+		err = json.Unmarshal(bodyBytes, &completionResponse)
+		if err != nil {
+			companion.PrintError(err)
+			return result, nil
+		}
+
+		result = completionResponse.Message
 	}
+
 	companion.Conversation = append(companion.Conversation, result)
 
 	return result, nil
 }
 
 // ProcessUserInput processes the user input by sending it to the API and handling the response.
-func (companion *Companion) SendGenerateRequest(message models.Message) (models.Message, error) {
+func (companion *Companion) SendGenerateRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
 	companion.AddMessage(message)
 	var result models.Message
 	var payload CompletionRequest = CompletionRequest{
 		Model:  string(companion.Config.AiModel),
 		Images: message.Images,
 		Prompt: message.Content,
-		Stream: true,
+		Stream: streaming,
 	}
 
 	// Marshal the payload into JSON
@@ -306,24 +325,37 @@ func (companion *Companion) SendGenerateRequest(message models.Message) (models.
 	}
 
 	// Process the streaming response
-	result, err = companion.HandleStreamResponse(resp, Generate)
-	if err != nil {
-		companion.PrintError(err)
+	// Process the streaming response
+	if streaming {
+		result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
+		if err != nil {
+			companion.PrintError(err)
+		}
+	} else {
+		var bodyBytes []byte
+		bodyBytes, err = io.ReadAll(resp.Body)
+		if err != nil {
+			companion.PrintError(err)
+			return result, nil
+		}
+
+		var completionResponse CompletionResponse
+		err = json.Unmarshal(bodyBytes, &completionResponse)
+		if err != nil {
+			companion.PrintError(err)
+			return result, nil
+		}
+
+		result = completionResponse.Message
 	}
+
 	companion.Conversation = append(companion.Conversation, result)
 
 	return result, nil
 }
 
-type StreamType int
-
-const (
-	Generate StreamType = 1
-	Chat     StreamType = 2
-)
-
 // handleStreamResponse handles the streaming response from the API.
-func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType StreamType) (models.Message, error) {
+func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
 	var message strings.Builder
 	var result models.Message
 	if resp.StatusCode != http.StatusOK {
@@ -333,9 +365,8 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	}
 
 	buffer := make([]byte, companion.Config.BufferSize)
-	if companion.Config.Output {
-		companion.Print("> ")
-	}
+	companion.Print("> ")
+
 	// handle response
 	for {
 		n, err := resp.Body.Read(buffer) // Read data from the response body into a buffer
@@ -355,13 +386,24 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 				}
 
 				switch streamType {
-				case Chat:
+				case models.Chat:
 					// Print the content from each choice in the chunk
 					message.WriteString(responseObject.Message.Content)
+					if callback != nil {
+						if err := callback(responseObject.Message); err != nil {
+							companion.PrintError(err)
+						}
+					}
 					companion.Print(responseObject.Message.Content)
-				case Generate:
+				case models.Generate:
 					// Print the content from each choice in the chunk
 					message.WriteString(responseObject.Response)
+					if callback != nil {
+						msg := companion.CreateMessage(models.Assistant, responseObject.Response)
+						if err := callback(msg); err != nil {
+							companion.PrintError(err)
+						}
+					}
 					companion.Print(responseObject.Response)
 				}
 
