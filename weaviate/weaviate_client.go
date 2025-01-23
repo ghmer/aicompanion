@@ -2,7 +2,7 @@ package weaviate
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log"
 
 	"github.com/weaviate/weaviate-go-client/v4/weaviate"
@@ -74,7 +74,7 @@ func (wc *WeaviateClient) QueryDocuments(ctx context.Context, className string, 
 	}
 
 	for _, err := range result.Errors {
-		fmt.Println("error", err.Message)
+		return nil, errors.New(err.Message)
 	}
 
 	var documents []map[string]interface{}
@@ -83,7 +83,6 @@ func (wc *WeaviateClient) QueryDocuments(ctx context.Context, className string, 
 
 	}
 
-	fmt.Println("documents", documents)
 	return documents, nil
 }
 
