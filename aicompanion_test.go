@@ -2,6 +2,7 @@ package aicompanion_test
 
 import (
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -10,11 +11,22 @@ import (
 )
 
 func TestAICompanion(t *testing.T) {
-
-	config := aicompanion.NewDefaultConfig(models.Ollama, "", "llama3.1:8b", "", "vectordb.nachbars-netz.link", "NAMnFwzrT7hsw3xDL53qrvF5qlNlQuD0")
-	config.Output = false
+	aiApiKey := os.Getenv("API_KEY")
+	vectorApiKey := os.Getenv("VECTOR_KEY")
+	config := aicompanion.NewDefaultConfig(models.Ollama, "", "llama3.1:8b", aiApiKey, "vectordb.nachbars-netz.link", vectorApiKey)
+	config.Output = true
 	companion := aicompanion.NewCompanion(*config)
 	companion.SetSystemRole("you are a helpful assistant")
+
+	t.Run("Test PrepareConversation", func(t *testing.T) {
+		msg := companion.CreateMessage(models.User, "Hello!")
+		response, err := companion.SendChatRequest(msg, false, nil)
+		if err != nil {
+			t.Errorf("Failed to get AI response: %v", err)
+		}
+
+		t.Log(response)
+	})
 
 	t.Run("Test PrepareConversation", func(t *testing.T) {
 		messages := companion.PrepareConversation()
