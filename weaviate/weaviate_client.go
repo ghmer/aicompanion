@@ -1,4 +1,4 @@
-package rag
+package weaviate
 
 import (
 	"context"
@@ -17,7 +17,7 @@ type WeaviateClient struct {
 }
 
 // NewWeaviateClient initializes a WeaviateClient with the given endpoint and API key.
-func NewWeaviateClient(endpoint, apiKey string) (WeaviateClient, error) {
+func NewWeaviateClient(endpoint, apiKey string) (*WeaviateClient, error) {
 	cfg := weaviate.Config{
 		Scheme: "https",
 		Host:   endpoint,
@@ -29,10 +29,10 @@ func NewWeaviateClient(endpoint, apiKey string) (WeaviateClient, error) {
 	client, err := weaviate.NewClient(cfg)
 	if err != nil {
 		log.Fatal(err)
-		return WeaviateClient{}, err
+		return &WeaviateClient{}, err
 	}
 
-	return WeaviateClient{client: client}, nil
+	return &WeaviateClient{client: client}, nil
 }
 
 // AddDocument adds a document with metadata and embeddings to the vector database.
