@@ -19,7 +19,7 @@ type CompletionRequest struct {
 	Options   string               `json:"options,omitempty"`
 	System    string               `json:"system,omitempty"`
 	Template  string               `json:"template,omitempty"`
-	Stream    bool                 `json:"stream,omitempty"`
+	Stream    bool                 `json:"stream"`
 	Raw       bool                 `json:"raw,omitempty"`
 	KeepAlive int64                `json:"keep_alive,omitempty"`
 	Context   string               `json:"context,omitempty"`
