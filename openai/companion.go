@@ -10,15 +10,17 @@ import (
 	"strings"
 
 	"github.com/ghmer/aicompanion/models"
+	"github.com/ghmer/aicompanion/rag"
 	"github.com/ghmer/aicompanion/terminal"
 )
 
 // Companion represents the AI companion with its configuration, conversation history, and HTTP client.
 type Companion struct {
-	Config       models.Configuration
-	SystemRole   models.Message
-	Conversation []models.Message
-	Client       *http.Client
+	Config         models.Configuration
+	SystemRole     models.Message
+	Conversation   []models.Message
+	Client         *http.Client
+	VectorDbClient *rag.VectorDbClient
 }
 
 // GetConfig returns the current configuration of the companion.
@@ -34,6 +36,14 @@ func (companion *Companion) SetConfig(config models.Configuration) {
 // GetCurrentSystemRole returns the current system role of the companion.
 func (companion *Companion) GetSystemRole() models.Message {
 	return companion.SystemRole
+}
+
+func (companion *Companion) SetVectorDBClient(vectorDbClient *rag.VectorDbClient) {
+	companion.VectorDbClient = vectorDbClient
+}
+
+func (companion *Companion) GetVectorDBClient() *rag.VectorDbClient {
+	return companion.VectorDbClient
 }
 
 // SetCurrentSystemRole sets a new system role for the companion.
@@ -148,7 +158,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	}
 
 	// Create and configure the HTTP request
-	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEmbedURL, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiEmbedURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		companion.PrintError(err)
 		return embeddingResponse, err
@@ -223,7 +233,7 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 	}
 
 	// Create and configure the HTTP request
-	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiModerationURL, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiModerationURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		companion.PrintError(err)
 		return moderationResponse, err
@@ -272,7 +282,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 	companion.AddMessage(message)
 	var result models.Message
 	var payload CompletionsRequest = CompletionsRequest{
-		Model:  string(companion.Config.AiModel),
+		Model:  string(companion.Config.AiModels.ChatModel),
 		Prompt: message.Content,
 		Stream: true,
 	}
@@ -294,7 +304,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 	}
 
 	// Create and configure the HTTP request
-	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiGenerateURL, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiGenerateURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		companion.PrintError(err)
 		return result, err
@@ -330,7 +340,7 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 	companion.AddMessage(message)
 	var result models.Message
 	var payload ChatRequest = ChatRequest{
-		Model:    string(companion.Config.AiModel),
+		Model:    string(companion.Config.AiModels.ChatModel),
 		Messages: companion.PrepareConversation(),
 		Stream:   true,
 	}
@@ -352,7 +362,7 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 	}
 
 	// Create and configure the HTTP request
-	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiChatURL, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiChatURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		companion.PrintError(err)
 		return result, err
@@ -393,7 +403,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 		return models.Message{}, err
 	}
 
-	buffer := make([]byte, companion.Config.BufferSize)
+	buffer := make([]byte, companion.Config.HttpConfig.BufferSize)
 	if companion.Config.Output {
 		companion.Print("> ")
 	}

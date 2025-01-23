@@ -1,4 +1,4 @@
-package aicompanion
+package rag
 
 import (
 	"context"

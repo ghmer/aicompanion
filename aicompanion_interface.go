@@ -8,6 +8,7 @@ import (
 	"github.com/ghmer/aicompanion/models"
 	"github.com/ghmer/aicompanion/ollama"
 	"github.com/ghmer/aicompanion/openai"
+	"github.com/ghmer/aicompanion/rag"
 	"github.com/ghmer/aicompanion/terminal"
 	"github.com/ghmer/aicompanion/utility"
 )
@@ -64,74 +65,88 @@ type AICompanion interface {
 	SendModerationRequest(moderationRequest models.ModerationRequest) (models.ModerationResponse, error)
 
 	HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error)
+
+	SetVectorDBClient(vectorDbClient *rag.VectorDbClient)
+
+	GetVectorDBClient() *rag.VectorDbClient
 }
 
 // NewCompanion creates a new Companion instance with the provided configuration.
 func NewCompanion(config models.Configuration) AICompanion {
+	var client AICompanion
 	switch config.ApiProvider {
 	case models.Ollama:
-		return &ollama.Companion{
+		client = &ollama.Companion{
 			Config: config,
 			SystemRole: models.Message{
 				Role:    models.System,
 				Content: "You are a helpful assistant",
 			},
 			Conversation: make([]models.Message, 0),
-			Client:       &http.Client{Timeout: time.Second * time.Duration(config.HTTPClientTimeout)},
+			Client:       &http.Client{Timeout: time.Second * time.Duration(config.HttpConfig.HTTPClientTimeout)},
 		}
 	case models.OpenAI:
-		return &openai.Companion{
+		client = &openai.Companion{
 			Config: config,
 			SystemRole: models.Message{
 				Role:    models.Developer,
 				Content: "You are a helpful assistant",
 			},
 			Conversation: make([]models.Message, 0),
-			Client:       &http.Client{Timeout: time.Second * time.Duration(config.HTTPClientTimeout)},
+			Client:       &http.Client{Timeout: time.Second * time.Duration(config.HttpConfig.HTTPClientTimeout)},
 		}
 	}
 
-	return &ollama.Companion{
-		Config: config,
-		SystemRole: models.Message{
-			Role:    models.System,
-			Content: "You are a helpful assistant",
-		},
-		Conversation: make([]models.Message, 0),
-		Client:       &http.Client{Timeout: time.Second * time.Duration(config.HTTPClientTimeout)},
-	}
+	vectorClient, _ := rag.NewVectorDbClient(config.VectorDBConfig.Endpoint, config.VectorDBConfig.ApiKey)
+	client.SetVectorDBClient(&vectorClient)
+
+	return client
 }
 
 // NewDefaultConfig creates a new default configuration with the provided API provider, API token, and model.
-func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, model string) *models.Configuration {
+func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, embeddingModel string, vectorDbUrl, vectorDbToken string) *models.Configuration {
 	var config models.Configuration = models.Configuration{
-		ApiProvider:       apiProvider,
-		ApiKey:            apiToken,
-		AiModel:           model,
-		ApiChatURL:        "http://localhost:11434/api/chat",
-		ApiGenerateURL:    "http://localhost:11434/api/generate",
-		ApiEmbedURL:       "http://localhost:11434/api/embed",
-		MaxInputLength:    500,
-		HTTPClientTimeout: 300,
-		BufferSize:        2048,
-		MaxMessages:       20,
-		Color:             terminal.Green,
-		Output:            true,
+		ApiProvider: apiProvider,
+		ApiKey:      apiToken,
+		AiModels: models.AiModels{
+			ChatModel:      chatModel,
+			EmbeddingModel: embeddingModel,
+		},
+		HttpConfig: models.HttpConfiguration{
+			MaxInputLength:    500,
+			HTTPClientTimeout: 300,
+			BufferSize:        2048,
+		},
+		MaxMessages: 20,
+		Color:       terminal.Green,
+		Output:      true,
 	}
 
+	var apiEndpoints models.ApiEndpointUrls
 	switch apiProvider {
 	case models.Ollama:
-		config.ApiChatURL = "http://localhost:11434/api/chat"
-		config.ApiGenerateURL = "http://localhost:11434/api/generate"
-		config.ApiEmbedURL = "http://localhost:11434/api/embed"
-		config.ApiModerationURL = "http://localhost:11434/api/generate"
+		apiEndpoints = models.ApiEndpointUrls{
+			ApiChatURL:       "http://localhost:11434/api/chat",
+			ApiGenerateURL:   "http://localhost:11434/api/generate",
+			ApiEmbedURL:      "http://localhost:11434/api/embed",
+			ApiModerationURL: "http://localhost:11434/api/generate",
+		}
 
 	case models.OpenAI:
-		config.ApiChatURL = "https://api.openai.com/v1/chat/completions"
-		config.ApiGenerateURL = "https://api.openai.com/v1/completions"
-		config.ApiEmbedURL = "https://api.openai.com/v1/embeddings"
-		config.ApiModerationURL = "https://api.openai.com/v1/moderations"
+		apiEndpoints = models.ApiEndpointUrls{
+			ApiChatURL:       "https://api.openai.com/v1/chat/completions",
+			ApiGenerateURL:   "https://api.openai.com/v1/completions",
+			ApiEmbedURL:      "https://api.openai.com/v1/embeddings",
+			ApiModerationURL: "https://api.openai.com/v1/moderations",
+		}
 	}
+
+	config.VectorDBConfig = models.VectorDbConfiguration{
+		Endpoint: vectorDbUrl,
+		ApiKey:   vectorDbToken,
+	}
+
+	config.ApiEndpoints = apiEndpoints
 
 	return &config
 }

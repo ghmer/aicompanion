@@ -10,12 +10,10 @@ import (
 )
 
 func TestAICompanion(t *testing.T) {
-	// Prepare configuration for the AI Companion
-	config := aicompanion.NewDefaultConfig(models.Ollama, "", "mock-model")
 
-	// Create a new AI Companion instance
+	config := aicompanion.NewDefaultConfig(models.Ollama, "", "llama3.1:8b", "", "vectordb.nachbars-netz.link", "NAMnFwzrT7hsw3xDL53qrvF5qlNlQuD0")
+	config.Output = false
 	companion := aicompanion.NewCompanion(*config)
-
 	companion.SetSystemRole("you are a helpful assistant")
 
 	t.Run("Test PrepareConversation", func(t *testing.T) {
@@ -53,17 +51,17 @@ func TestAICompanion(t *testing.T) {
 	})
 
 	t.Run("Test GetConfig", func(t *testing.T) {
-		if companion.GetConfig().AiModel != config.AiModel {
-			t.Errorf("Expected AI model '%s', got '%s'", config.AiModel, companion.GetConfig().AiModel)
+		if companion.GetConfig().AiModels != config.AiModels {
+			t.Errorf("Expected AI model '%s', got '%s'", config.AiModels, companion.GetConfig().AiModels)
 		}
 	})
 
 	t.Run("Test SetConfig", func(t *testing.T) {
-		newConfig := aicompanion.NewDefaultConfig(models.Ollama, "", "updated-model")
-		newConfig.AiModel = "updated-model"
+		newConfig := aicompanion.NewDefaultConfig(models.Ollama, "", "updated-model", "", "", "")
+		newConfig.AiModels.ChatModel = "updated-model"
 		companion.SetConfig(*newConfig)
-		if companion.GetConfig().AiModel != "updated-model" {
-			t.Errorf("Expected updated model 'updated-model', got '%s'", companion.GetConfig().AiModel)
+		if companion.GetConfig().AiModels.ChatModel != "updated-model" {
+			t.Errorf("Expected updated model 'updated-model', got '%s'", companion.GetConfig().AiModels.ChatModel)
 		}
 	})
 

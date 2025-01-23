@@ -13,20 +13,39 @@ import (
 
 // Configuration represents the configuration for the application.
 type Configuration struct {
-	AiModel           string      `json:"ai_model"`            // Specific AI model to use
-	ApiChatURL        string      `json:"api_chat_url"`        // URL for chat API
-	ApiGenerateURL    string      `json:"api_generate_url"`    // URL for generate API
-	ApiEmbedURL       string      `json:"api_embed_url"`       // URL for embedding API
-	ApiModerationURL  string      `json:"api_moderation_url"`  // URL for moderation API
-	MaxInputLength    int         `json:"max_input_length"`    // Maximum length of input allowed
-	HTTPClientTimeout int         `json:"http_client_timeout"` // HTTP client timeout duration
-	BufferSize        int         `json:"buffer_size"`         // Buffer size for processing data
-	ApiProvider       ApiProvider `json:"api_provider"`        // API provider used
-	ApiKey            string      `json:"api_key"`             // API key for authentication
-	MaxMessages       int         `json:"max_messages"`        // Maximum number of messages in a conversation
-	UserColor         string      `json:"term_color"`          // Color for user output in terminal
-	Output            bool        `json:"term_output"`         // Flag to enable/disabled terminal output
-	Color             terminal.TermColor
+	ApiProvider    ApiProvider           `json:"api_provider"` // API provider used
+	ApiKey         string                `json:"api_key"`      // API key for authentication
+	ApiEndpoints   ApiEndpointUrls       `json:"api_endpoints"`
+	AiModels       AiModels              `json:"ai_models"` // Specific AI model to use
+	HttpConfig     HttpConfiguration     `json:"http_config"`
+	VectorDBConfig VectorDbConfiguration `json:"vectordb_config"`
+	MaxMessages    int                   `json:"max_messages"` // Maximum number of messages in a conversation
+	UserColor      string                `json:"term_color"`   // Color for user output in terminal
+	Output         bool                  `json:"term_output"`  // Flag to enable/disabled terminal output
+	Color          terminal.TermColor
+}
+
+type AiModels struct {
+	ChatModel      string `json:"chat_model"`
+	EmbeddingModel string `json:"embedding_model"`
+}
+
+type ApiEndpointUrls struct {
+	ApiChatURL       string `json:"api_chat_url"`       // URL for chat API
+	ApiGenerateURL   string `json:"api_generate_url"`   // URL for generate API
+	ApiEmbedURL      string `json:"api_embed_url"`      // URL for embedding API
+	ApiModerationURL string `json:"api_moderation_url"` // URL for moderation API
+}
+
+type HttpConfiguration struct {
+	MaxInputLength    int `json:"max_input_length"`    // Maximum length of input allowed
+	HTTPClientTimeout int `json:"http_client_timeout"` // HTTP client timeout duration
+	BufferSize        int `json:"buffer_size"`         // Buffer size for processing data
+}
+
+type VectorDbConfiguration struct {
+	Endpoint string `json:"endpoint_url"`
+	ApiKey   string `json:"api_key"`
 }
 
 // NewConfigFromFile creates a new Configuration instance from a JSON file.
@@ -44,8 +63,13 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 	}
 
 	// Perform sanitization
-	if config.AiModel == "" {
-		return nil, errors.New("invalid configuration: AiModel is required")
+	if config.AiModels.ChatModel == "" {
+		return nil, errors.New("invalid configuration: ChatModel is required")
+	}
+
+	// Perform sanitization
+	if config.AiModels.EmbeddingModel == "" {
+		return nil, errors.New("invalid configuration: EmbeddingModel is required")
 	}
 
 	if config.UserColor == "" {
@@ -64,81 +88,77 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 	}
 
 	// set default urls if no custom ones were provided
-	if config.ApiChatURL == "" {
+	if config.ApiEndpoints.ApiChatURL == "" {
 		fmt.Print("using default url for chat api: ")
 		if config.ApiProvider == Ollama {
-			config.ApiChatURL = "http://localhost:11434/api/chat"
+			config.ApiEndpoints.ApiChatURL = "http://localhost:11434/api/chat"
 		}
 		if config.ApiProvider == OpenAI {
-			config.ApiChatURL = "https://api.openai.com/v1/chat/completions"
+			config.ApiEndpoints.ApiChatURL = "https://api.openai.com/v1/chat/completions"
 		}
-		fmt.Println(config.ApiChatURL)
 	}
 
 	// Ensure URL starts with http:// or https://
-	if !strings.HasPrefix(config.ApiChatURL, "http://") && !strings.HasPrefix(config.ApiChatURL, "https://") {
+	if !strings.HasPrefix(config.ApiEndpoints.ApiChatURL, "http://") && !strings.HasPrefix(config.ApiEndpoints.ApiChatURL, "https://") {
 		return nil, errors.New("invalid configuration: ApiChatURL must start with http:// or https://")
 	}
 
 	// If AIType is Generate, validate and set default URLs if not provided
-	if config.ApiGenerateURL == "" {
+	if config.ApiEndpoints.ApiGenerateURL == "" {
 		fmt.Print("using default url for generate api: ")
 		if config.ApiProvider == Ollama {
-			config.ApiGenerateURL = "http://localhost:11434/api/generate"
+			config.ApiEndpoints.ApiGenerateURL = "http://localhost:11434/api/generate"
 		}
 		if config.ApiProvider == OpenAI {
-			config.ApiGenerateURL = "https://api.openai.com/v1/completions"
+			config.ApiEndpoints.ApiGenerateURL = "https://api.openai.com/v1/completions"
 		}
-		fmt.Println(config.ApiGenerateURL)
 	}
 
 	// Ensure URL starts with http:// or https://
-	if !strings.HasPrefix(config.ApiGenerateURL, "http://") && !strings.HasPrefix(config.ApiGenerateURL, "https://") {
+	if !strings.HasPrefix(config.ApiEndpoints.ApiGenerateURL, "http://") && !strings.HasPrefix(config.ApiEndpoints.ApiGenerateURL, "https://") {
 		return nil, errors.New("invalid configuration: ApiGenerateURL must start with http:// or https://")
 	}
 
-	if config.ApiEmbedURL == "" {
+	if config.ApiEndpoints.ApiEmbedURL == "" {
 		fmt.Print("using default url for embed api: ")
 		if config.ApiProvider == Ollama {
-			config.ApiEmbedURL = "http://localhost:11434/api/embed"
+			config.ApiEndpoints.ApiEmbedURL = "http://localhost:11434/api/embed"
 		}
 		if config.ApiProvider == OpenAI {
-			config.ApiEmbedURL = "https://api.openai.com/v1/embeddings"
+			config.ApiEndpoints.ApiEmbedURL = "https://api.openai.com/v1/embeddings"
 		}
-		fmt.Println(config.ApiEmbedURL)
 	}
 
 	// Ensure URL starts with http:// or https://
-	if !strings.HasPrefix(config.ApiEmbedURL, "http://") && !strings.HasPrefix(config.ApiEmbedURL, "https://") {
+	if !strings.HasPrefix(config.ApiEndpoints.ApiEmbedURL, "http://") && !strings.HasPrefix(config.ApiEndpoints.ApiEmbedURL, "https://") {
 		return nil, errors.New("invalid configuration: ApiEmbedURL must start with http:// or https://")
 	}
 
-	if config.ApiModerationURL == "" {
+	if config.ApiEndpoints.ApiModerationURL == "" {
 		fmt.Print("using default url for moderation api: ")
 		if config.ApiProvider == Ollama {
-			config.ApiModerationURL = "http://localhost:11434/api/moderate"
+			config.ApiEndpoints.ApiModerationURL = "http://localhost:11434/api/moderate"
 		}
 		if config.ApiProvider == OpenAI {
-			config.ApiModerationURL = "https://api.openai.com/v1/moderations"
+			config.ApiEndpoints.ApiModerationURL = "https://api.openai.com/v1/moderations"
 		}
-		fmt.Println(config.ApiModerationURL)
 	}
 
 	// Ensure URL starts with http:// or https://
-	if !strings.HasPrefix(config.ApiModerationURL, "http://") && !strings.HasPrefix(config.ApiModerationURL, "https://") {
+	if !strings.HasPrefix(config.ApiEndpoints.ApiModerationURL, "http://") && !strings.HasPrefix(config.ApiEndpoints.ApiModerationURL, "https://") {
 		return nil, errors.New("invalid configuration: ApiModerationURL must start with http:// or https://")
 	}
 
-	if config.MaxInputLength <= 0 {
-		config.MaxInputLength = 512 // Default value
+	if config.HttpConfig.MaxInputLength <= 0 {
+		config.HttpConfig.MaxInputLength = 2038 // Default value
 	}
 
-	if config.HTTPClientTimeout <= 0 {
-		config.HTTPClientTimeout = 10 // Default to 10 seconds
+	if config.HttpConfig.HTTPClientTimeout <= 0 {
+		config.HttpConfig.HTTPClientTimeout = 10 // Default to 10 seconds
 	}
 
-	if config.BufferSize <= 0 {
-		config.BufferSize = 1024 // Default to 1KB
+	if config.HttpConfig.BufferSize <= 0 {
+		config.HttpConfig.BufferSize = 1024 // Default to 1KB
 	}
 
 	if config.ApiKey == "" {
