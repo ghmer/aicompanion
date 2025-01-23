@@ -106,7 +106,7 @@ func NewCompanion(config models.Configuration) AICompanion {
 func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, model string) *models.Configuration {
 	var config models.Configuration = models.Configuration{
 		ApiProvider:       apiProvider,
-		ApiKey:            "",
+		ApiKey:            apiToken,
 		AiModel:           model,
 		ApiChatURL:        "http://localhost:11434/api/chat",
 		ApiGenerateURL:    "http://localhost:11434/api/generate",
