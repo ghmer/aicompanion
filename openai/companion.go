@@ -399,6 +399,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 		companion.Print("> ")
 	}
 	// handle response
+Outerloop:
 	for {
 		n, err := resp.Body.Read(buffer) // Read data from the response body into a buffer
 		if n > 0 {
@@ -409,11 +410,13 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 					continue
 				}
 
-				if line == "[DONE]" { // Check if the line is "[DONE]"
-					break
+				if strings.TrimSpace(line) == "[DONE]" { // Check if the line is "[DONE]"
+					fmt.Println("line was DONE")
+					break Outerloop
 				}
 
 				line = strings.TrimPrefix(line, "data:")
+				fmt.Println(line)
 
 				var responseObject ChatResponse
 				if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
@@ -435,7 +438,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 				if responseObject.Choices[0].FinishReason == "stop" {
 					result = companion.CreateMessage(models.Assistant, message.String())
 					companion.Println("")
-					break
+					break Outerloop
 				}
 			}
 		}
