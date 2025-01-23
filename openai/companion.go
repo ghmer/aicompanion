@@ -295,7 +295,6 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 
 	// Create and configure the HTTP request
 	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiGenerateURL, bytes.NewBuffer(payloadBytes))
-	fmt.Println("REQUEST: ", req)
 	if err != nil {
 		companion.PrintError(err)
 		return result, err
@@ -411,12 +410,10 @@ Outerloop:
 				}
 
 				if strings.TrimSpace(line) == "[DONE]" { // Check if the line is "[DONE]"
-					fmt.Println("line was DONE")
 					break Outerloop
 				}
 
 				line = strings.TrimPrefix(line, "data:")
-				fmt.Println(line)
 
 				var responseObject ChatResponse
 				if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
