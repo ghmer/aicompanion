@@ -97,9 +97,10 @@ func NewCompanion(config models.Configuration) AICompanion {
 		}
 	}
 
-	vectorClient, _ := rag.NewVectorDbClient(config.VectorDBConfig.Endpoint, config.VectorDBConfig.ApiKey)
-	client.SetVectorDBClient(&vectorClient)
-
+	if len(config.VectorDBConfig.Endpoint) > 0 {
+		vectorClient, _ := rag.NewVectorDbClient(config.VectorDBConfig.Endpoint, config.VectorDBConfig.ApiKey)
+		client.SetVectorDBClient(&vectorClient)
+	}
 	return client
 }
 
