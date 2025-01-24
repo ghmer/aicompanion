@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"syscall"
 	"time"
 
 	"golang.org/x/term"
@@ -138,7 +137,7 @@ func getTerminalWidth(defaultWidth int) int {
 			return parsedWidth
 		}
 	}
-	if detectedWidth, _, err := term.GetSize(syscall.Stdin); err == nil {
+	if detectedWidth, _, err := term.GetSize(int(os.Stdin.Fd())); err == nil {
 		return detectedWidth
 	}
 	return defaultWidth
