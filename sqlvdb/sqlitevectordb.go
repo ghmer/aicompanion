@@ -1,4 +1,4 @@
-package rag
+package sqlvdb
 
 import (
 	"context"
@@ -77,6 +77,19 @@ func (s *SQLiteVectorDb) schemaExists(ctx context.Context, classname string) (bo
 	return true, nil
 }
 
+// GetSchema retrieves the schema for storing documents with the given class name.
+func (s *SQLiteVectorDb) GetSchema(ctx context.Context, classname string) (interface{}, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	if exists, err := s.schemaExists(ctx, classname); err != nil {
+		return nil, err
+	} else if !exists {
+		return nil, errors.New("schema does not exist")
+	}
+	return classname, nil
+}
+
 // CreateSchema creates a new schema for storing documents with the given class name.
 func (s *SQLiteVectorDb) CreateSchema(ctx context.Context, classname interface{}) error {
 	s.mutex.Lock()
@@ -102,21 +115,29 @@ func (s *SQLiteVectorDb) CreateSchema(ctx context.Context, classname interface{}
 	return nil
 }
 
-// GetSchema retrieves the schema for storing documents with the given class name.
-func (s *SQLiteVectorDb) GetSchema(ctx context.Context, classname string) (interface{}, error) {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+// DeleteSchema deletes a schema from the database.
+func (s *SQLiteVectorDb) DeleteSchema(ctx context.Context, classname string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
-	if exists, err := s.schemaExists(ctx, classname); err != nil {
-		return nil, err
-	} else if !exists {
-		return nil, errors.New("schema does not exist")
+	if _, exists := s.schemas[classname]; !exists {
+		return errors.New("schema does not exist")
 	}
-	return classname, nil
+
+	query := fmt.Sprintf(`DROP TABLE IF EXISTS %s`, classname)
+	if _, err := s.db.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("failed to delete schema: %w", err)
+	}
+
+	delete(s.schemas, classname)
+	return nil
 }
 
 // AddDocument adds a document with the given class name and ID to the database.
 func (s *SQLiteVectorDb) AddDocument(ctx context.Context, classname, id string, document models.Document) error {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	if _, exists := s.schemas[classname]; !exists {
 		return errors.New("schema does not exist")
 	}
@@ -140,11 +161,6 @@ func (s *SQLiteVectorDb) AddDocument(ctx context.Context, classname, id string, 
 	return nil
 }
 
-// UpdateDocument updates a document with the given class name and ID in the database.
-func (s *SQLiteVectorDb) UpdateDocument(ctx context.Context, classname, id string, document models.Document) error {
-	return s.AddDocument(ctx, classname, id, document)
-}
-
 // AddDocuments adds multiple documents to the database.
 func (s *SQLiteVectorDb) AddDocuments(ctx context.Context, classname string, documents []models.Document) error {
 	for _, doc := range documents {
@@ -153,6 +169,11 @@ func (s *SQLiteVectorDb) AddDocuments(ctx context.Context, classname string, doc
 		}
 	}
 	return nil
+}
+
+// UpdateDocument updates a document with the given class name and ID in the database.
+func (s *SQLiteVectorDb) UpdateDocument(ctx context.Context, classname, id string, document models.Document) error {
+	return s.AddDocument(ctx, classname, id, document)
 }
 
 // QueryDocuments queries documents based on a vector and returns the top result.
@@ -166,6 +187,9 @@ func (s *SQLiteVectorDb) QueryDocuments(ctx context.Context, classname string, v
 
 // QueryDocumentsWithFilter queries documents based on a vector and returns the top results with an optional filter.
 func (s *SQLiteVectorDb) QueryDocumentsWithFilter(ctx context.Context, classname string, vector []float32, limit int, filter map[string]interface{}) ([]models.Document, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	if _, exists := s.schemas[classname]; !exists {
 		return nil, errors.New("schema does not exist")
 	}
@@ -231,6 +255,9 @@ func (s *SQLiteVectorDb) QueryDocumentsWithFilter(ctx context.Context, classname
 
 // DeleteDocument deletes a document from the database.
 func (s *SQLiteVectorDb) DeleteDocument(ctx context.Context, classname, id string) error {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	if _, exists := s.schemas[classname]; !exists {
 		return errors.New("schema does not exist")
 	}
@@ -245,6 +272,9 @@ func (s *SQLiteVectorDb) DeleteDocument(ctx context.Context, classname, id strin
 
 // DeleteDocuments deletes multiple documents from the database.
 func (s *SQLiteVectorDb) DeleteDocuments(ctx context.Context, classname string, ids []string) error {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	if _, exists := s.schemas[classname]; !exists {
 		return errors.New("schema does not exist")
 	}
@@ -255,24 +285,6 @@ func (s *SQLiteVectorDb) DeleteDocuments(ctx context.Context, classname string, 
 			return fmt.Errorf("failed to delete document %s: %w", id, err)
 		}
 	}
-	return nil
-}
-
-// DeleteSchema deletes a schema from the database.
-func (s *SQLiteVectorDb) DeleteSchema(ctx context.Context, classname string) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	if _, exists := s.schemas[classname]; !exists {
-		return errors.New("schema does not exist")
-	}
-
-	query := fmt.Sprintf(`DROP TABLE IF EXISTS %s`, classname)
-	if _, err := s.db.ExecContext(ctx, query); err != nil {
-		return fmt.Errorf("failed to delete schema: %w", err)
-	}
-
-	delete(s.schemas, classname)
 	return nil
 }
 
