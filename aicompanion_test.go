@@ -13,7 +13,7 @@ import (
 func TestAICompanion(t *testing.T) {
 	aiApiKey := os.Getenv("API_KEY")
 	vectorApiKey := os.Getenv("VECTOR_KEY")
-	config := aicompanion.NewDefaultConfig(models.Ollama, aiApiKey, "llama3.1:8b", "mxai-embed-large", "vectordb.nachbars-netz.link", vectorApiKey)
+	config := aicompanion.NewDefaultConfig(models.Ollama, aiApiKey, "llama3.1:8b", "mxai-embed-large", models.WeaviateDb, "vectordb.nachbars-netz.link", vectorApiKey)
 	config.Output = true
 	companion := aicompanion.NewCompanion(*config)
 	companion.SetSystemRole("you are a helpful assistant")
@@ -69,7 +69,7 @@ func TestAICompanion(t *testing.T) {
 	})
 
 	t.Run("Test SetConfig", func(t *testing.T) {
-		newConfig := aicompanion.NewDefaultConfig(models.Ollama, "", "updated-model", "", "", "")
+		newConfig := aicompanion.NewDefaultConfig(models.Ollama, "", "updated-model", "", models.WeaviateDb, "", "")
 		newConfig.AiModels.ChatModel = "updated-model"
 		companion.SetConfig(*newConfig)
 		if companion.GetConfig().AiModels.ChatModel != "updated-model" {

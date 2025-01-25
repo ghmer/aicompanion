@@ -51,10 +51,17 @@ type HttpConfiguration struct {
 	BufferSize        int `json:"buffer_size"`         // Buffer size for processing data
 }
 
+type VectorDbType string
+
+const (
+	SqlVectorDb VectorDbType = "sqlvdb"
+	WeaviateDb  VectorDbType = "weaviate"
+)
+
 type VectorDbConfiguration struct {
-	Type     string `json:"type"`
-	Endpoint string `json:"endpoint_url"`
-	ApiKey   string `json:"api_key"`
+	Type     VectorDbType `json:"type"`
+	Endpoint string       `json:"endpoint_url"`
+	ApiKey   string       `json:"api_key"`
 }
 
 // NewConfigFromFile creates a new Configuration instance from a JSON file.

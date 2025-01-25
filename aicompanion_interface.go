@@ -103,16 +103,21 @@ func NewCompanion(config models.Configuration) AICompanion {
 		}
 	}
 
-	if len(config.VectorDBConfig.Endpoint) > 0 {
+	switch config.VectorDBConfig.Type {
+	case models.SqlVectorDb:
 		vectorClient, _ := rag.NewSQLiteVectorDb(config.VectorDBConfig.Endpoint, true)
 		client.SetVectorDBClient(&vectorClient)
+	case models.WeaviateDb:
+		vectorClient, _ := rag.NewWeaviateClient(config.VectorDBConfig.Endpoint, config.VectorDBConfig.ApiKey)
+		client.SetVectorDBClient(&vectorClient)
+	default:
 	}
 
 	return client
 }
 
 // NewDefaultConfig creates a new default configuration with the provided API provider, API token, and model.
-func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, embeddingModel string, vectorDbUrl, vectorDbToken string) *models.Configuration {
+func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, embeddingModel string, vectorDbType models.VectorDbType, vectorDbUrl, vectorDbToken string) *models.Configuration {
 	var config models.Configuration = models.Configuration{
 		ApiProvider: apiProvider,
 		ApiKey:      apiToken,
@@ -150,6 +155,7 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, embed
 	}
 
 	config.VectorDBConfig = models.VectorDbConfiguration{
+		Type:     vectorDbType,
 		Endpoint: vectorDbUrl,
 		ApiKey:   vectorDbToken,
 	}
