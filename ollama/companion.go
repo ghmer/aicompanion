@@ -34,6 +34,19 @@ func (companion *Companion) SetConfig(config models.Configuration) {
 	companion.Config = config
 }
 
+// CreateUserMessage creates a new user message with the given input string
+func (companion *Companion) CreateUserMessage(input string, images []models.Base64Image) models.Message {
+	if images != nil || len(images) > 0 {
+		return companion.CreateMessageWithImages(models.User, input, images)
+	}
+	return companion.CreateMessage(models.User, input)
+}
+
+// CreateAssistantMessage creates a new assistant message with the given input string
+func (companion *Companion) CreateAssistantMessage(input string) models.Message {
+	return companion.CreateMessage(models.Assistant, input)
+}
+
 func (companion *Companion) SetVectorDBClient(vectorDbClient *rag.VectorDbClient) {
 	companion.VectorDbClient = vectorDbClient
 }
@@ -409,7 +422,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 					// Print the content from each choice in the chunk
 					message.WriteString(responseObject.Response)
 					if callback != nil {
-						msg := companion.CreateMessage(models.Assistant, responseObject.Response)
+						msg := companion.CreateAssistantMessage(responseObject.Response)
 						if err := callback(msg); err != nil {
 							companion.PrintError(err)
 						}
@@ -418,7 +431,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 				}
 
 				if responseObject.Done {
-					result = companion.CreateMessage(models.Assistant, message.String())
+					result = companion.CreateAssistantMessage(message.String())
 					companion.Println("")
 					break
 				}

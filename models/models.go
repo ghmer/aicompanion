@@ -11,6 +11,14 @@ import (
 	"github.com/ghmer/aicompanion/terminal"
 )
 
+// Document represents a stored document with metadata and embeddings.
+type Document struct {
+	ID         string                 `json:"id"`
+	ClassName  string                 `json:"classname"`
+	Embeddings []float32              `json:"embeddings"`
+	Metadata   map[string]interface{} `json:"metadata"`
+}
+
 // Configuration represents the configuration for the application.
 type Configuration struct {
 	ApiProvider    ApiProvider           `json:"api_provider"` // API provider used
@@ -44,6 +52,7 @@ type HttpConfiguration struct {
 }
 
 type VectorDbConfiguration struct {
+	Type     string `json:"type"`
 	Endpoint string `json:"endpoint_url"`
 	ApiKey   string `json:"api_key"`
 }

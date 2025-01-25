@@ -38,6 +38,19 @@ func (companion *Companion) GetSystemRole() models.Message {
 	return companion.SystemRole
 }
 
+// CreateUserMessage creates a new user message with the given input string
+func (companion *Companion) CreateUserMessage(input string, images []models.Base64Image) models.Message {
+	if images != nil || len(images) > 0 {
+		return companion.CreateMessageWithImages(models.User, input, images)
+	}
+	return companion.CreateMessage(models.User, input)
+}
+
+// CreateAssistantMessage creates a new assistant message with the given input string
+func (companion *Companion) CreateAssistantMessage(input string) models.Message {
+	return companion.CreateMessage(models.Assistant, input)
+}
+
 func (companion *Companion) SetVectorDBClient(vectorDbClient *rag.VectorDbClient) {
 	companion.VectorDbClient = vectorDbClient
 }
@@ -49,7 +62,7 @@ func (companion *Companion) GetVectorDBClient() *rag.VectorDbClient {
 // SetCurrentSystemRole sets a new system role for the companion.
 func (companion *Companion) SetSystemRole(prompt string) {
 	var role models.Message = models.Message{
-		Role:    models.System,
+		Role:    models.Developer,
 		Content: prompt,
 	}
 	companion.SystemRole = role
@@ -85,7 +98,7 @@ func (companion *Companion) PrepareConversation() []models.Message {
 	return messages
 }
 
-// createmodels.Message creates a new models.Message with the given role and content.
+// createMessage creates a new models.Message with the given role and content.
 func (companion *Companion) CreateMessage(role models.Role, input string) models.Message {
 	var message models.Message = models.Message{
 		Role:    role,
@@ -433,7 +446,7 @@ Outerloop:
 				}
 
 				// Print the content from each choice in the chunk
-				msg := companion.CreateMessage(models.Assistant, responseObject.Choices[0].Delta.Content)
+				msg := companion.CreateAssistantMessage(responseObject.Choices[0].Delta.Content)
 				if callback != nil {
 					if err := callback(msg); err != nil {
 						companion.PrintError(err)
@@ -443,7 +456,7 @@ Outerloop:
 				companion.Print(responseObject.Choices[0].Delta.Content)
 
 				if responseObject.Choices[0].FinishReason == "stop" {
-					result = companion.CreateMessage(models.Assistant, message.String())
+					result = companion.CreateAssistantMessage(message.String())
 					companion.Println("")
 					break Outerloop
 				}
