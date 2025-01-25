@@ -104,7 +104,7 @@ func NewCompanion(config models.Configuration) AICompanion {
 	}
 
 	if len(config.VectorDBConfig.Endpoint) > 0 {
-		vectorClient, _ := rag.NewSQLiteVectorDbClient(config.VectorDBConfig.Endpoint, true)
+		vectorClient, _ := rag.NewSQLiteVectorDb(config.VectorDBConfig.Endpoint, true)
 		client.SetVectorDBClient(&vectorClient)
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ghmer/aicompanion/models"
+	"github.com/ghmer/aicompanion/sqlvdb"
 	"github.com/ghmer/aicompanion/weaviate"
 )
 
@@ -21,10 +22,10 @@ type VectorDbClient interface {
 	QueryDocumentsWithFilter(ctx context.Context, classname string, vector []float32, limit int, filter map[string]interface{}) ([]models.Document, error)
 }
 
-func NewSQLiteVectorDbClient(dbpath string, normalize bool) (VectorDbClient, error) {
-	return NewSQLiteVectorDb(dbpath, normalize)
+func NewSQLiteVectorDb(dbpath string, normalize bool) (VectorDbClient, error) {
+	return sqlvdb.NewSQLiteVectorDb(dbpath, normalize)
 }
 
-func NewSWeaviateClient(endpoint, apiKey string) (VectorDbClient, error) {
+func NewWeaviateClient(endpoint, apiKey string) (VectorDbClient, error) {
 	return weaviate.NewWeaviateClient(endpoint, apiKey)
 }

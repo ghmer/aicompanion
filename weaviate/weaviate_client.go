@@ -43,6 +43,7 @@ func (wc *WeaviateClient) AddDocument(ctx context.Context, classname, id string,
 	return err
 }
 
+// AddDocuments adds multiple documents with metadata and embeddings to the vector database.
 func (wc *WeaviateClient) AddDocuments(ctx context.Context, classname string, documents []cm.Document) error {
 	for _, doc := range documents {
 		_, err := wc.client.Data().Creator().WithClassName(classname).WithID(doc.ID).WithProperties(doc.Metadata).WithVector(doc.Embeddings).Do(ctx)
@@ -105,6 +106,22 @@ func (wc *WeaviateClient) QueryDocuments(ctx context.Context, classname string, 
 	return documents, nil
 }
 
+// QueryDocumentsWithFilter queries documents with additional filter conditions.
+func (wc *WeaviateClient) QueryDocumentsWithFilter(ctx context.Context, classname string, vector []float32, limit int, filter map[string]interface{}) ([]cm.Document, error) {
+	return wc.QueryDocuments(ctx, classname, vector, limit)
+}
+
+// DeleteDocuments removes multiple documents from the vector database by their IDs.
+func (wc *WeaviateClient) DeleteDocuments(ctx context.Context, classname string, ids []string) error {
+	for _, id := range ids {
+		err := wc.DeleteDocument(ctx, classname, id)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // DeleteDocument removes a document from the vector database by its ID.
 func (wc *WeaviateClient) DeleteDocument(ctx context.Context, className, id string) error {
 	err := wc.client.Data().Deleter().WithClassName(className).WithID(id).Do(ctx)
@@ -124,18 +141,4 @@ func (wc *WeaviateClient) GetSchema(ctx context.Context, className string) (inte
 // DeleteSchema removes a schema class from Weaviate.
 func (wc *WeaviateClient) DeleteSchema(ctx context.Context, className string) error {
 	return wc.client.Schema().ClassDeleter().WithClassName(className).Do(ctx)
-}
-
-func (wc *WeaviateClient) DeleteDocuments(ctx context.Context, classname string, ids []string) error {
-	for _, id := range ids {
-		err := wc.DeleteDocument(ctx, classname, id)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (wc *WeaviateClient) QueryDocumentsWithFilter(ctx context.Context, classname string, vector []float32, limit int, filter map[string]interface{}) ([]cm.Document, error) {
-	return wc.QueryDocuments(ctx, classname, vector, limit)
 }
