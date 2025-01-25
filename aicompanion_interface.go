@@ -24,6 +24,12 @@ type AICompanion interface {
 	// CreateMessageWithImages creates a new message with the given role, input string, and images
 	CreateMessageWithImages(role models.Role, message string, images []models.Base64Image) models.Message
 
+	//CreateUserMessage creates a new user message with the given input string
+	CreateUserMessage(input string, images []models.Base64Image) models.Message
+
+	// CreateAssistantMessage creates a new assistant message with the given input string
+	CreateAssistantMessage(input string) models.Message
+
 	// AddMessage adds a new message to the conversation
 	AddMessage(message models.Message)
 
@@ -98,9 +104,10 @@ func NewCompanion(config models.Configuration) AICompanion {
 	}
 
 	if len(config.VectorDBConfig.Endpoint) > 0 {
-		vectorClient, _ := rag.NewVectorDbClient(config.VectorDBConfig.Endpoint, config.VectorDBConfig.ApiKey)
+		vectorClient, _ := rag.NewSQLiteVectorDbClient(config.VectorDBConfig.Endpoint, true)
 		client.SetVectorDBClient(&vectorClient)
 	}
+
 	return client
 }
 
