@@ -16,22 +16,21 @@ import (
 
 // Companion represents the AI companion with its configuration, conversation history, and HTTP client.
 type Companion struct {
-	Config           models.Configuration
-	SystemRole       models.Message
-	EnrichmentPrompt string
-	Conversation     []models.Message
-	Client           *http.Client
-	VectorDbClient   *rag.VectorDbClient
+	Config         models.Configuration
+	SystemRole     models.Message
+	Conversation   []models.Message
+	Client         *http.Client
+	VectorDbClient *rag.VectorDbClient
 }
 
 // SetEnrichmentPrompt sets a new enrichment prompt for the companion.
 func (companion *Companion) SetEnrichmentPrompt(enrichmentprompt string) {
-	companion.EnrichmentPrompt = enrichmentprompt
+	companion.Config.EnrichmentPrompt = enrichmentprompt
 }
 
 // GetEnrichmentPrompt returns the current enrichment prompt of the companion.
 func (companion *Companion) GetEnrichmentPrompt() string {
-	return companion.EnrichmentPrompt
+	return companion.Config.EnrichmentPrompt
 }
 
 // GetConfig returns the current configuration of the companion.

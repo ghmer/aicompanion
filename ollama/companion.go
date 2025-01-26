@@ -17,12 +17,11 @@ import (
 
 // Companion represents the AI companion with its configuration, conversation history, and HTTP client.
 type Companion struct {
-	Config           models.Configuration
-	SystemRole       models.Message
-	EnrichmentPrompt string
-	Conversation     []models.Message
-	Client           *http.Client
-	VectorDbClient   *rag.VectorDbClient
+	Config         models.Configuration
+	SystemRole     models.Message
+	Conversation   []models.Message
+	Client         *http.Client
+	VectorDbClient *rag.VectorDbClient
 }
 
 // GetConfig returns the current configuration of the companion.
@@ -37,12 +36,12 @@ func (companion *Companion) SetConfig(config models.Configuration) {
 
 // SetEnrichmentPrompt sets a new enrichment prompt for the companion.
 func (companion *Companion) SetEnrichmentPrompt(enrichmentprompt string) {
-	companion.EnrichmentPrompt = enrichmentprompt
+	companion.Config.EnrichmentPrompt = enrichmentprompt
 }
 
 // GetEnrichmentPrompt returns the current enrichment prompt of the companion.
 func (companion *Companion) GetEnrichmentPrompt() string {
-	return companion.EnrichmentPrompt
+	return companion.Config.EnrichmentPrompt
 }
 
 // CreateUserMessage creates a new user message with the given input string
@@ -73,6 +72,8 @@ func (companion *Companion) GetSystemRole() models.Message {
 
 // SetCurrentSystemRole sets a new system role for the companion.
 func (companion *Companion) SetSystemRole(prompt string) {
+	companion.Config.SystemPrompt = prompt
+
 	var role models.Message = models.Message{
 		Role:    models.System,
 		Content: prompt,

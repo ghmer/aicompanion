@@ -131,8 +131,8 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, embed
 		ApiProvider: apiProvider,
 		ApiKey:      apiToken,
 		AiModels: models.AiModels{
-			ChatModel:      models.Model{Model: chatModel},
-			EmbeddingModel: models.Model{Model: embeddingModel},
+			ChatModel:      models.Model{Model: chatModel, Name: chatModel},
+			EmbeddingModel: models.Model{Model: embeddingModel, Name: embeddingModel},
 		},
 		HttpConfig: models.HttpConfiguration{
 			MaxInputLength:    500,
@@ -143,6 +143,9 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, embed
 		Color:       terminal.Green,
 		Output:      true,
 	}
+
+	config.SystemPrompt = "You are a helpful assistant"
+	config.EnrichmentPrompt = "answer following query with the provided context:\nuser query: %s\ncontext: %s"
 
 	var apiEndpoints models.ApiEndpointUrls
 	switch apiProvider {

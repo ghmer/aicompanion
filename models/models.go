@@ -36,9 +36,9 @@ type Configuration struct {
 	MaxMessages      int                   `json:"max_messages"` // Maximum number of messages in a conversation
 	UserColor        string                `json:"term_color"`   // Color for user output in terminal
 	Output           bool                  `json:"term_output"`  // Flag to enable/disabled terminal output
+	SystemPrompt     string                `json:"system_prompt"`
+	EnrichmentPrompt string                `json:"enrichment_prompt"`
 	Color            terminal.TermColor
-	SystemPrompt     string `json:"system_prompt"`
-	EnrichmentPrompt string `json:"enrichment_prompt"`
 }
 
 type AiModels struct {
