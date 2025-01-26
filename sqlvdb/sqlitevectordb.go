@@ -104,7 +104,7 @@ func (s *SQLiteVectorDb) CreateSchema(ctx context.Context, classname interface{}
 
 	query := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 		id TEXT PRIMARY KEY,
-		metadata TEXT,
+		metadata BLOB,
 		embeddings BLOB
 	)`, classnameStr)
 	if _, err := s.db.ExecContext(ctx, query); err != nil {
@@ -154,7 +154,7 @@ func (s *SQLiteVectorDb) AddDocument(ctx context.Context, classname, id string, 
 	}
 
 	query := fmt.Sprintf(`INSERT OR REPLACE INTO %s (id, metadata, embeddings) VALUES (?, ?, ?)`, classname)
-	if _, err := s.db.ExecContext(ctx, query, id, string(metadataBytes), vectorBytes); err != nil {
+	if _, err := s.db.ExecContext(ctx, query, id, metadataBytes, vectorBytes); err != nil {
 		return fmt.Errorf("failed to add document: %w", err)
 	}
 
@@ -210,7 +210,7 @@ func (s *SQLiteVectorDb) QueryDocumentsWithFilter(ctx context.Context, classname
 
 	for rows.Next() {
 		var id string
-		var metadataJSON string
+		var metadataJSON []byte
 		var embeddingBytes []byte
 		if err := rows.Scan(&id, &metadataJSON, &embeddingBytes); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
@@ -222,7 +222,7 @@ func (s *SQLiteVectorDb) QueryDocumentsWithFilter(ctx context.Context, classname
 		}
 
 		var metadata map[string]interface{}
-		if err := json.Unmarshal([]byte(metadataJSON), &metadata); err != nil {
+		if err := json.Unmarshal(metadataJSON, &metadata); err != nil {
 			return nil, fmt.Errorf("failed to deserialize metadata: %w", err)
 		}
 
