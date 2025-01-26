@@ -16,10 +16,9 @@ type Model struct {
 	Permission []string `json:"permission"`
 }
 
-// ModelsResponse represents the response for listing models.
-type ModelsResponse struct {
-	Object string  `json:"object"`
-	Data   []Model `json:"data"`
+// ModelResponse represents the response structure for the models endpoint.
+type ModelResponse struct {
+	Models []models.Model `json:"data"`
 }
 
 // CompletionsRequest represents the input payload for generating text completions.

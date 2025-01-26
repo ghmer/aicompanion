@@ -11,6 +11,12 @@ import (
 	"github.com/ghmer/aicompanion/terminal"
 )
 
+// Model represents an AI model with its name and identifier.
+type Model struct {
+	Model string `json:"model"`
+	Name  string `json:"name"`
+}
+
 // Document represents a stored document with metadata and embeddings.
 type Document struct {
 	ID         string                 `json:"id"`
@@ -21,21 +27,23 @@ type Document struct {
 
 // Configuration represents the configuration for the application.
 type Configuration struct {
-	ApiProvider    ApiProvider           `json:"api_provider"` // API provider used
-	ApiKey         string                `json:"api_key"`      // API key for authentication
-	ApiEndpoints   ApiEndpointUrls       `json:"api_endpoints"`
-	AiModels       AiModels              `json:"ai_models"` // Specific AI model to use
-	HttpConfig     HttpConfiguration     `json:"http_config"`
-	VectorDBConfig VectorDbConfiguration `json:"vectordb_config"`
-	MaxMessages    int                   `json:"max_messages"` // Maximum number of messages in a conversation
-	UserColor      string                `json:"term_color"`   // Color for user output in terminal
-	Output         bool                  `json:"term_output"`  // Flag to enable/disabled terminal output
-	Color          terminal.TermColor
+	ApiProvider      ApiProvider           `json:"api_provider"` // API provider used
+	ApiKey           string                `json:"api_key"`      // API key for authentication
+	ApiEndpoints     ApiEndpointUrls       `json:"api_endpoints"`
+	AiModels         AiModels              `json:"ai_models"` // Specific AI model to use
+	HttpConfig       HttpConfiguration     `json:"http_config"`
+	VectorDBConfig   VectorDbConfiguration `json:"vectordb_config"`
+	MaxMessages      int                   `json:"max_messages"` // Maximum number of messages in a conversation
+	UserColor        string                `json:"term_color"`   // Color for user output in terminal
+	Output           bool                  `json:"term_output"`  // Flag to enable/disabled terminal output
+	Color            terminal.TermColor
+	SystemPrompt     string `json:"system_prompt"`
+	EnrichmentPrompt string `json:"enrichment_prompt"`
 }
 
 type AiModels struct {
-	ChatModel      string `json:"chat_model"`
-	EmbeddingModel string `json:"embedding_model"`
+	ChatModel      Model `json:"chat_model"`
+	EmbeddingModel Model `json:"embedding_model"`
 }
 
 type ApiEndpointUrls struct {
@@ -43,6 +51,7 @@ type ApiEndpointUrls struct {
 	ApiGenerateURL   string `json:"api_generate_url"`   // URL for generate API
 	ApiEmbedURL      string `json:"api_embed_url"`      // URL for embedding API
 	ApiModerationURL string `json:"api_moderation_url"` // URL for moderation API
+	ApiModelsURL     string `json:"api_models_url"`     // URL for model API
 }
 
 type HttpConfiguration struct {
@@ -79,12 +88,12 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 	}
 
 	// Perform sanitization
-	if config.AiModels.ChatModel == "" {
+	if config.AiModels.ChatModel.Model == "" {
 		return nil, errors.New("invalid configuration: ChatModel is required")
 	}
 
 	// Perform sanitization
-	if config.AiModels.EmbeddingModel == "" {
+	if config.AiModels.EmbeddingModel.Model == "" {
 		return nil, errors.New("invalid configuration: EmbeddingModel is required")
 	}
 
@@ -215,8 +224,8 @@ func (b Base64Image) MarshalJSON() ([]byte, error) {
 type ApiProvider string
 
 const (
-	OpenAI = "OpenAI" // OpenAI model type
-	Ollama = "Ollama" // Ollama model type
+	OpenAI = "openai" // OpenAI model type
+	Ollama = "ollama" // Ollama model type
 )
 
 // Role represents a role in a conversation, such as user, assistant, or system.
@@ -259,7 +268,7 @@ type ModerationRequest struct {
 // ModerationResponse represents the root structure of the moderation response.
 type ModerationResponse struct {
 	ID               string `json:"id"`
-	Model            string `json:"model"`
+	Model            Model  `json:"model"`
 	OriginalResponse any    `json:"results"`
 }
 

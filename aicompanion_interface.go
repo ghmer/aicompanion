@@ -45,6 +45,12 @@ type AICompanion interface {
 	// SetSystemRole sets a new system role message
 	SetSystemRole(prompt string)
 
+	// GetSystemRole returns the current system role message
+	GetEnrichmentPrompt() string
+
+	// SetSystemRole sets a new system role message
+	SetEnrichmentPrompt(prompt string)
+
 	// GetConversation returns the current conversation
 	GetConversation() []models.Message
 
@@ -58,6 +64,9 @@ type AICompanion interface {
 	SetClient(client *http.Client)
 
 	// interactions
+	// GetModels returns all models that the endpoint supports
+	GetModels() ([]models.Model, error)
+
 	// SendChatRequest sends a chat request to an AI model and returns a response message
 	SendChatRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error)
 
@@ -122,8 +131,8 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, embed
 		ApiProvider: apiProvider,
 		ApiKey:      apiToken,
 		AiModels: models.AiModels{
-			ChatModel:      chatModel,
-			EmbeddingModel: embeddingModel,
+			ChatModel:      models.Model{Model: chatModel},
+			EmbeddingModel: models.Model{Model: embeddingModel},
 		},
 		HttpConfig: models.HttpConfiguration{
 			MaxInputLength:    500,
@@ -143,6 +152,7 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, embed
 			ApiGenerateURL:   "http://localhost:11434/api/generate",
 			ApiEmbedURL:      "http://localhost:11434/api/embed",
 			ApiModerationURL: "http://localhost:11434/api/generate",
+			ApiModelsURL:     "http://localhost:11434/api/tags",
 		}
 
 	case models.OpenAI:
@@ -151,6 +161,7 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, embed
 			ApiGenerateURL:   "https://api.openai.com/v1/completions",
 			ApiEmbedURL:      "https://api.openai.com/v1/embeddings",
 			ApiModerationURL: "https://api.openai.com/v1/moderations",
+			ApiModelsURL:     "https://api.openai.com/v1/models",
 		}
 	}
 

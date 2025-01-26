@@ -16,11 +16,22 @@ import (
 
 // Companion represents the AI companion with its configuration, conversation history, and HTTP client.
 type Companion struct {
-	Config         models.Configuration
-	SystemRole     models.Message
-	Conversation   []models.Message
-	Client         *http.Client
-	VectorDbClient *rag.VectorDbClient
+	Config           models.Configuration
+	SystemRole       models.Message
+	EnrichmentPrompt string
+	Conversation     []models.Message
+	Client           *http.Client
+	VectorDbClient   *rag.VectorDbClient
+}
+
+// SetEnrichmentPrompt sets a new enrichment prompt for the companion.
+func (companion *Companion) SetEnrichmentPrompt(enrichmentprompt string) {
+	companion.EnrichmentPrompt = enrichmentprompt
+}
+
+// GetEnrichmentPrompt returns the current enrichment prompt of the companion.
+func (companion *Companion) GetEnrichmentPrompt() string {
+	return companion.EnrichmentPrompt
 }
 
 // GetConfig returns the current configuration of the companion.
@@ -283,7 +294,7 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 
 	moderationResponse = models.ModerationResponse{
 		ID:               originalResponse.ID,
-		Model:            originalResponse.Model,
+		Model:            models.Model{Model: originalResponse.Model},
 		OriginalResponse: originalResponse,
 	}
 
@@ -295,7 +306,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 	companion.AddMessage(message)
 	var result models.Message
 	var payload CompletionsRequest = CompletionsRequest{
-		Model:  string(companion.Config.AiModels.ChatModel),
+		Model:  string(companion.Config.AiModels.ChatModel.Model),
 		Prompt: message.Content,
 		Stream: true,
 	}
@@ -353,7 +364,7 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 	companion.AddMessage(message)
 	var result models.Message
 	var payload ChatRequest = ChatRequest{
-		Model:    string(companion.Config.AiModels.ChatModel),
+		Model:    companion.Config.AiModels.ChatModel.Model,
 		Messages: companion.PrepareConversation(),
 		Stream:   true,
 	}
@@ -472,4 +483,44 @@ Outerloop:
 	}
 
 	return result, nil
+}
+
+func (companion *Companion) GetModels() ([]models.Model, error) {
+	// Create and configure the HTTP request
+	req, err := http.NewRequest(http.MethodGet, companion.Config.ApiEndpoints.ApiModelsURL, nil)
+	if err != nil {
+		companion.PrintError(err)
+		return []models.Model{}, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Execute the HTTP request
+	resp, err := companion.Client.Do(req)
+	if err != nil {
+		companion.PrintError(err)
+		return []models.Model{}, err
+	}
+	defer resp.Body.Close()
+
+	if companion.Config.Output {
+		companion.ClearLine()
+	}
+
+	// Process the streaming response
+	responseBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		companion.PrintError(err)
+		return []models.Model{}, err
+	}
+
+	var originalResponse ModelResponse
+	err = json.Unmarshal(responseBytes, &originalResponse)
+	if err != nil {
+		companion.PrintError(err)
+		return []models.Model{}, err
+	}
+
+	return originalResponse.Models, nil
 }

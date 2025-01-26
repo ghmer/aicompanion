@@ -25,6 +25,12 @@ type CompletionRequest struct {
 	Context   string               `json:"context,omitempty"`
 }
 
+// ModelResponse represents the response structure for the models endpoint.
+type ModelResponse struct {
+	Models []models.Model `json:"models"`
+}
+
+// ChatMessage represents a message in the chat context.
 type ChatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`

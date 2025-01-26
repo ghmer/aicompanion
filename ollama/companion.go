@@ -17,11 +17,12 @@ import (
 
 // Companion represents the AI companion with its configuration, conversation history, and HTTP client.
 type Companion struct {
-	Config         models.Configuration
-	SystemRole     models.Message
-	Conversation   []models.Message
-	Client         *http.Client
-	VectorDbClient *rag.VectorDbClient
+	Config           models.Configuration
+	SystemRole       models.Message
+	EnrichmentPrompt string
+	Conversation     []models.Message
+	Client           *http.Client
+	VectorDbClient   *rag.VectorDbClient
 }
 
 // GetConfig returns the current configuration of the companion.
@@ -32,6 +33,16 @@ func (companion *Companion) GetConfig() models.Configuration {
 // SetConfig sets a new configuration for the companion.
 func (companion *Companion) SetConfig(config models.Configuration) {
 	companion.Config = config
+}
+
+// SetEnrichmentPrompt sets a new enrichment prompt for the companion.
+func (companion *Companion) SetEnrichmentPrompt(enrichmentprompt string) {
+	companion.EnrichmentPrompt = enrichmentprompt
+}
+
+// GetEnrichmentPrompt returns the current enrichment prompt of the companion.
+func (companion *Companion) GetEnrichmentPrompt() string {
+	return companion.EnrichmentPrompt
 }
 
 // CreateUserMessage creates a new user message with the given input string
@@ -226,7 +237,7 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 	companion.AddMessage(message)
 	var result models.Message
 	var payload CompletionRequest = CompletionRequest{
-		Model:    string(companion.Config.AiModels.ChatModel),
+		Model:    string(companion.Config.AiModels.ChatModel.Model),
 		Messages: companion.PrepareConversation(),
 		Stream:   streaming,
 	}
@@ -303,7 +314,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 	companion.AddMessage(message)
 	var result models.Message
 	var payload CompletionRequest = CompletionRequest{
-		Model:  string(companion.Config.AiModels.ChatModel),
+		Model:  string(companion.Config.AiModels.ChatModel.Model),
 		Images: message.Images,
 		Prompt: message.Content,
 		Stream: streaming,
@@ -447,4 +458,44 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	}
 
 	return result, nil
+}
+
+func (companion *Companion) GetModels() ([]models.Model, error) {
+	// Create and configure the HTTP request
+	req, err := http.NewRequest(http.MethodGet, companion.Config.ApiEndpoints.ApiModelsURL, nil)
+	if err != nil {
+		companion.PrintError(err)
+		return []models.Model{}, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Execute the HTTP request
+	resp, err := companion.Client.Do(req)
+	if err != nil {
+		companion.PrintError(err)
+		return []models.Model{}, err
+	}
+	defer resp.Body.Close()
+
+	if companion.Config.Output {
+		companion.ClearLine()
+	}
+
+	// Process the streaming response
+	responseBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		companion.PrintError(err)
+		return []models.Model{}, err
+	}
+
+	var originalResponse ModelResponse
+	err = json.Unmarshal(responseBytes, &originalResponse)
+	if err != nil {
+		companion.PrintError(err)
+		return []models.Model{}, err
+	}
+
+	return originalResponse.Models, nil
 }
