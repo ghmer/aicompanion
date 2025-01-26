@@ -2,7 +2,6 @@ package aicompanion_test
 
 import (
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -11,27 +10,16 @@ import (
 )
 
 func TestAICompanion(t *testing.T) {
-	aiApiKey := os.Getenv("API_KEY")
-	vectorApiKey := os.Getenv("VECTOR_KEY")
-	config := aicompanion.NewDefaultConfig(models.Ollama, aiApiKey, "llama3.1:8b", "mxai-embed-large", models.WeaviateDb, "vectordb.nachbars-netz.link", vectorApiKey)
-	config.Output = true
+	apiKey, vectorApiKey := "", ""
+	config := aicompanion.NewDefaultConfig(models.Ollama, apiKey, "llama3.1:8b", "mxai-embed-large", models.SqlVectorDb, "vectorstore.db", vectorApiKey)
+	config.Output = false
 	companion := aicompanion.NewCompanion(*config)
 	companion.SetSystemRole("you are a helpful assistant")
 
 	t.Run("Test PrepareConversation", func(t *testing.T) {
-		msg := companion.CreateMessage(models.User, "Hello!")
-		response, err := companion.SendChatRequest(msg, false, nil)
-		if err != nil {
-			t.Errorf("Failed to get AI response: %v", err)
-		}
-
-		t.Log(response)
-	})
-
-	t.Run("Test PrepareConversation", func(t *testing.T) {
 		messages := companion.PrepareConversation()
 		if len(messages) != 1 {
-			t.Errorf("Expected empty conversation, got %d messages", len(messages))
+			t.Errorf("Expected 1 messages, got %d messages", len(messages))
 		}
 	})
 
@@ -42,6 +30,21 @@ func TestAICompanion(t *testing.T) {
 		}
 		if message.Content != "Hello!" {
 			t.Errorf("Expected content 'Hello!', got '%s'", message.Content)
+		}
+	})
+
+	t.Run("Test SendMessage", func(t *testing.T) {
+		msg := companion.CreateMessage(models.User, "Hello!")
+		_, err := companion.SendChatRequest(msg, false, nil)
+		if err != nil {
+			t.Errorf("Failed to get AI response: %v", err)
+		}
+	})
+
+	t.Run("Test PrepareConversation", func(t *testing.T) {
+		messages := companion.PrepareConversation()
+		if len(messages) != 3 {
+			t.Errorf("Expected 3 messages, got %d messages", len(messages))
 		}
 	})
 
@@ -57,8 +60,8 @@ func TestAICompanion(t *testing.T) {
 		message := models.Message{Role: models.User, Content: "New message"}
 		companion.AddMessage(message)
 		conversation := companion.GetConversation()
-		if len(conversation) != 1 {
-			t.Errorf("Expected 1 message in conversation, got %d", len(conversation))
+		if len(conversation) != 3 {
+			t.Errorf("Expected 3 message in conversation, got %d", len(conversation))
 		}
 	})
 
@@ -70,13 +73,22 @@ func TestAICompanion(t *testing.T) {
 
 	t.Run("Test SetConfig", func(t *testing.T) {
 		newConfig := aicompanion.NewDefaultConfig(models.Ollama, "", "updated-model", "", models.WeaviateDb, "", "")
-		newConfig.AiModels.ChatModel = "updated-model"
+		newConfig.AiModels.ChatModel.Model = "updated-model"
 		companion.SetConfig(*newConfig)
-		if companion.GetConfig().AiModels.ChatModel != "updated-model" {
+		if companion.GetConfig().AiModels.ChatModel.Model != "updated-model" {
 			t.Errorf("Expected updated model 'updated-model', got '%s'", companion.GetConfig().AiModels.ChatModel)
 		}
 	})
 
+	t.Run("Test GetModels", func(t *testing.T) {
+		models, err := companion.GetModels()
+		if err != nil {
+			t.Errorf("Failed to get models: %v", err)
+		}
+		if len(models) == 0 {
+			t.Errorf("Expected at least one model, got none")
+		}
+	})
 	t.Run("Test GetSystemRole", func(t *testing.T) {
 		role := companion.GetSystemRole()
 		if role.Content != "you are a helpful assistant" {
