@@ -18,7 +18,7 @@ type Model struct {
 
 // ModelResponse represents the response structure for the models endpoint.
 type ModelResponse struct {
-	Models []models.Model `json:"data"`
+	Models []Model `json:"data"`
 }
 
 // CompletionsRequest represents the input payload for generating text completions.

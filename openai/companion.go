@@ -522,5 +522,15 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 		return []models.Model{}, err
 	}
 
-	return originalResponse.Models, nil
+	var transformedModels []models.Model
+	for _, model := range originalResponse.Models {
+		var transformedModel models.Model = models.Model{
+			Model: model.ID,
+			Name:  model.ID,
+		}
+
+		transformedModels = append(transformedModels, transformedModel)
+	}
+
+	return transformedModels, nil
 }
