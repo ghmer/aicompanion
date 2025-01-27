@@ -121,10 +121,6 @@ func (companion *Companion) CreateMessage(role models.Role, input string) models
 		Images:  nil,
 	}
 
-	fmt.Printf("Create Message: %v\n", message)
-	bytes, _ := json.Marshal(&message)
-	fmt.Println(string(bytes))
-
 	return message
 }
 
@@ -135,7 +131,7 @@ func (companion *Companion) CreateMessageWithImages(role models.Role, input stri
 		Content: input,
 		Images:  images,
 	}
-	fmt.Println("Create Message with images")
+
 	return message
 }
 
@@ -250,16 +246,12 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		Stream:   streaming,
 	}
 
-	fmt.Printf("payload: %v\n", payload)
-
 	// Marshal the payload into JSON
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		companion.PrintError(err)
 		return result, err
 	}
-
-	fmt.Printf("payloadBytes: %s\n", string(payloadBytes))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -278,7 +270,6 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 	}
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
-	fmt.Printf("req: %v\n", req)
 
 	// Execute the HTTP request
 	resp, err := companion.Client.Do(req)
@@ -287,7 +278,6 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		return models.Message{}, err
 	}
 	defer resp.Body.Close()
-	fmt.Printf("resp: %v\n", resp)
 
 	if companion.Config.Output {
 		cancel()
@@ -373,7 +363,6 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 	}
 
 	// Process the streaming response
-	// Process the streaming response
 	if streaming {
 		result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
 		if err != nil {
@@ -406,6 +395,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
 	var message strings.Builder
 	var result models.Message
+	var finalerr error
 	if resp.StatusCode != http.StatusOK {
 		err := fmt.Errorf("unexpected http status: %s", resp.Status)
 		companion.PrintError(err)
@@ -413,8 +403,9 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	}
 
 	buffer := make([]byte, companion.Config.HttpConfig.BufferSize)
-	companion.Print("> ")
-
+	if companion.Config.Output {
+		companion.Print("> ")
+	}
 	// handle response
 	for {
 		n, err := resp.Body.Read(buffer) // Read data from the response body into a buffer
@@ -430,6 +421,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 				if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
 					companion.PrintError(err)
 					companion.Println(line)
+					finalerr = err
 					break
 				}
 
@@ -439,6 +431,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 					message.WriteString(responseObject.Message.Content)
 					if callback != nil {
 						if err := callback(responseObject.Message); err != nil {
+							finalerr = err
 							companion.PrintError(err)
 						}
 					}
@@ -449,6 +442,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 					if callback != nil {
 						msg := companion.CreateAssistantMessage(responseObject.Response)
 						if err := callback(msg); err != nil {
+							finalerr = err
 							companion.PrintError(err)
 						}
 					}
@@ -466,12 +460,13 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 		if err == io.EOF {
 			break
 		} else if err != nil {
+			finalerr = err
 			companion.PrintError(err) // Print any error that occurred during streaming
 			break
 		}
 	}
 
-	return result, nil
+	return result, finalerr
 }
 
 // GetModels returns a list of available models from the API.

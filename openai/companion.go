@@ -72,7 +72,7 @@ func (companion *Companion) GetVectorDBClient() *rag.VectorDbClient {
 // SetCurrentSystemRole sets a new system role for the companion.
 func (companion *Companion) SetSystemRole(prompt string) {
 	var role models.Message = models.Message{
-		Role:    models.Developer,
+		Role:    models.System,
 		Content: prompt,
 	}
 	companion.SystemRole = role
@@ -368,16 +368,12 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		Stream:   true,
 	}
 
-	fmt.Printf("payload: %v\n", payload)
-
 	// Marshal the payload into JSON
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		companion.PrintError(err)
 		return result, err
 	}
-
-	fmt.Printf("payloadBytes: %s\n", string(payloadBytes))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -396,7 +392,6 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 	}
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
-	fmt.Printf("req: %v\n", req)
 
 	// Execute the HTTP request
 	resp, err := companion.Client.Do(req)
@@ -405,7 +400,6 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		return models.Message{}, err
 	}
 	defer resp.Body.Close()
-	fmt.Printf("resp: %v\n", resp)
 
 	if companion.Config.Output {
 		cancel()
@@ -426,6 +420,7 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
 	var message strings.Builder
 	var result models.Message
+	var finalerr error
 	if resp.StatusCode != http.StatusOK {
 		err := fmt.Errorf("unexpected http status: %s", resp.Status)
 		companion.PrintError(err)
@@ -456,6 +451,7 @@ Outerloop:
 
 				var responseObject ChatResponse
 				if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
+					finalerr = err
 					companion.PrintError(err)
 					companion.Println(line)
 					break
@@ -465,6 +461,7 @@ Outerloop:
 				msg := companion.CreateAssistantMessage(responseObject.Choices[0].Delta.Content)
 				if callback != nil {
 					if err := callback(msg); err != nil {
+						finalerr = err
 						companion.PrintError(err)
 					}
 				}
@@ -482,12 +479,13 @@ Outerloop:
 		if err == io.EOF {
 			break
 		} else if err != nil {
+			finalerr = err
 			companion.PrintError(err) // Print any error that occurred during streaming
 			break
 		}
 	}
 
-	return result, nil
+	return result, finalerr
 }
 
 // GetModels retrieves a list of available models from the API.
