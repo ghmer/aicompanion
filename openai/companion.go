@@ -422,7 +422,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	var result models.Message
 	var finalerr error
 	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("unexpected http status: %s", resp.Status)
+		err := fmt.Errorf("unexpected http status: %s, %v", resp.Status, resp)
 		companion.PrintError(err)
 		return models.Message{}, err
 	}
