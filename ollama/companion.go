@@ -276,10 +276,9 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		companion.PrintError(err)
 		return result, err
 	}
-
-	fmt.Printf("req: %v\n", req)
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
+	fmt.Printf("req: %v\n", req)
 
 	// Execute the HTTP request
 	resp, err := companion.Client.Do(req)

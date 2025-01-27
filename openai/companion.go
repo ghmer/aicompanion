@@ -368,12 +368,16 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		Stream:   true,
 	}
 
+	fmt.Printf("payload: %v\n", payload)
+
 	// Marshal the payload into JSON
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		companion.PrintError(err)
 		return result, err
 	}
+
+	fmt.Printf("payloadBytes: %s\n", string(payloadBytes))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -392,6 +396,7 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 	}
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
+	fmt.Printf("req: %v\n", req)
 
 	// Execute the HTTP request
 	resp, err := companion.Client.Do(req)
@@ -400,6 +405,7 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		return models.Message{}, err
 	}
 	defer resp.Body.Close()
+	fmt.Printf("resp: %v\n", resp)
 
 	if companion.Config.Output {
 		cancel()
