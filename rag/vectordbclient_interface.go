@@ -16,6 +16,7 @@ type VectorDbClient interface {
 	DeleteDocument(ctx context.Context, classname, id string) error
 	CreateSchema(ctx context.Context, classname interface{}) error
 	GetSchema(ctx context.Context, classname string) (interface{}, error)
+	GetSchemaClassNames(ctx context.Context) ([]string, error)
 	DeleteSchema(ctx context.Context, classname string) error
 	AddDocuments(ctx context.Context, classname string, documents []models.Document) error
 	DeleteDocuments(ctx context.Context, classname string, ids []string) error

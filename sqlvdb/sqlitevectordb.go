@@ -90,6 +90,30 @@ func (s *SQLiteVectorDb) GetSchema(ctx context.Context, classname string) (inter
 	return classname, nil
 }
 
+// GetSchemaClassNames retrieves the class names of all schemas in the database.
+func (s *SQLiteVectorDb) GetSchemaClassNames(ctx context.Context) ([]string, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	var result []string
+
+	query := `SELECT name FROM sqlite_master WHERE type='table'`
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return result, err
+		}
+		result = append(result, name)
+	}
+	return result, nil
+}
+
 // CreateSchema creates a new schema for storing documents with the given class name.
 func (s *SQLiteVectorDb) CreateSchema(ctx context.Context, classname interface{}) error {
 	s.mutex.Lock()

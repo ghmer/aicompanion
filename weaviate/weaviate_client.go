@@ -142,3 +142,20 @@ func (wc *WeaviateClient) GetSchema(ctx context.Context, className string) (inte
 func (wc *WeaviateClient) DeleteSchema(ctx context.Context, className string) error {
 	return wc.client.Schema().ClassDeleter().WithClassName(className).Do(ctx)
 }
+
+// GetSchemaClassNames retrieves all schema class names from Weaviate.
+func (wc *WeaviateClient) GetSchemaClassNames(ctx context.Context) ([]string, error) {
+	// Retrieve the schema
+	schema, err := wc.client.Schema().Getter().Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract class names
+	var classNames []string
+	for _, class := range schema.Classes {
+		classNames = append(classNames, class.Class)
+	}
+
+	return classNames, nil
+}
