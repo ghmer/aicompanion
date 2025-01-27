@@ -95,7 +95,7 @@ func NewCompanion(config models.Configuration) AICompanion {
 			Config: config,
 			SystemRole: models.Message{
 				Role:    models.System,
-				Content: "You are a helpful assistant",
+				Content: config.SystemPrompt,
 			},
 			Conversation: make([]models.Message, 0),
 			Client:       &http.Client{Timeout: time.Second * time.Duration(config.HttpConfig.HTTPClientTimeout)},
@@ -104,8 +104,8 @@ func NewCompanion(config models.Configuration) AICompanion {
 		client = &openai.Companion{
 			Config: config,
 			SystemRole: models.Message{
-				Role:    models.Developer,
-				Content: "You are a helpful assistant",
+				Role:    models.System,
+				Content: config.SystemPrompt,
 			},
 			Conversation: make([]models.Message, 0),
 			Client:       &http.Client{Timeout: time.Second * time.Duration(config.HttpConfig.HTTPClientTimeout)},
