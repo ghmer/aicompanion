@@ -272,6 +272,7 @@ type ModerationResponse struct {
 	OriginalResponse any    `json:"results"`
 }
 
+// the type of streaming endpoint (chat/generate)
 type StreamType int
 
 const (

@@ -13,6 +13,7 @@ import (
 	"golang.org/x/image/draw"
 )
 
+// Resolution represents different image resolutions.
 type Resolution int
 
 const (

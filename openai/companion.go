@@ -484,6 +484,7 @@ Outerloop:
 	return result, nil
 }
 
+// GetModels retrieves a list of available models from the API.
 func (companion *Companion) GetModels() ([]models.Model, error) {
 	// Create and configure the HTTP request
 	req, err := http.NewRequest(http.MethodGet, companion.Config.ApiEndpoints.ApiModelsURL, nil)

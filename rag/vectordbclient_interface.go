@@ -23,10 +23,12 @@ type VectorDbClient interface {
 	QueryDocumentsWithFilter(ctx context.Context, classname string, vector []float32, limit int, filter map[string]interface{}) ([]models.Document, error)
 }
 
+// NewSQLiteVectorDb creates a new SQLite vector database client.
 func NewSQLiteVectorDb(dbpath string, normalize bool) (VectorDbClient, error) {
 	return sqlvdb.NewSQLiteVectorDb(dbpath, normalize)
 }
 
+// NewWeaviateClient creates a new Weaviate vector database client.
 func NewWeaviateClient(endpoint, apiKey string) (VectorDbClient, error) {
 	return weaviate.NewWeaviateClient(endpoint, apiKey)
 }

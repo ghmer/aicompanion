@@ -57,10 +57,12 @@ func (companion *Companion) CreateAssistantMessage(input string) models.Message 
 	return companion.CreateMessage(models.Assistant, input)
 }
 
+// SetVectorDBClient sets a new vector database client for the companion.
 func (companion *Companion) SetVectorDBClient(vectorDbClient *rag.VectorDbClient) {
 	companion.VectorDbClient = vectorDbClient
 }
 
+// GetVectorDBClient returns the current vector database client of the companion.
 func (companion *Companion) GetVectorDBClient() *rag.VectorDbClient {
 	return companion.VectorDbClient
 }
@@ -461,6 +463,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	return result, nil
 }
 
+// GetModels returns a list of available models from the API.
 func (companion *Companion) GetModels() ([]models.Model, error) {
 	// Create and configure the HTTP request
 	req, err := http.NewRequest(http.MethodGet, companion.Config.ApiEndpoints.ApiModelsURL, nil)
