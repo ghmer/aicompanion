@@ -32,6 +32,7 @@ func (companion *Companion) GetConfig() models.Configuration {
 // SetConfig sets a new configuration for the companion.
 func (companion *Companion) SetConfig(config models.Configuration) {
 	companion.Config = config
+	companion.SetSystemRole(config.SystemPrompt)
 }
 
 // SetEnrichmentPrompt sets a new enrichment prompt for the companion.
