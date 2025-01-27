@@ -49,8 +49,8 @@ func (companion *Companion) GetSystemRole() models.Message {
 }
 
 // CreateUserMessage creates a new user message with the given input string
-func (companion *Companion) CreateUserMessage(input string, images []models.Base64Image) models.Message {
-	if images != nil || len(images) > 0 {
+func (companion *Companion) CreateUserMessage(input string, images *[]models.Base64Image) models.Message {
+	if images != nil && len(*images) > 0 {
 		return companion.CreateMessageWithImages(models.User, input, images)
 	}
 	return companion.CreateMessage(models.User, input)
@@ -119,7 +119,7 @@ func (companion *Companion) CreateMessage(role models.Role, input string) models
 }
 
 // CreateMessageWithImages creates a new message with the given role, content and images
-func (companion *Companion) CreateMessageWithImages(role models.Role, input string, images []models.Base64Image) models.Message {
+func (companion *Companion) CreateMessageWithImages(role models.Role, input string, images *[]models.Base64Image) models.Message {
 	var message models.Message = models.Message{
 		Role:    role,
 		Content: input,

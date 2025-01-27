@@ -50,9 +50,9 @@ func TestAICompanion(t *testing.T) {
 
 	t.Run("Test CreateMessageWithImages", func(t *testing.T) {
 		images := []models.Base64Image{{Data: "mockImageData"}}
-		message := companion.CreateMessageWithImages(models.User, "Hello with images!", images)
-		if len(message.Images) != 1 {
-			t.Errorf("Expected 1 image, got %d", len(message.Images))
+		message := companion.CreateMessageWithImages(models.User, "Hello with images!", &images)
+		if len(*message.Images) != 1 {
+			t.Errorf("Expected 1 image, got %d", len(*message.Images))
 		}
 	})
 

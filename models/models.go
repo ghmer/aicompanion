@@ -195,9 +195,9 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 
 // Message represents an individual message in the chat.
 type Message struct {
-	Role    Role          `json:"role"`             // Role of the message (user, assistant, system)
-	Content string        `json:"content"`          // Content of the message
-	Images  []Base64Image `json:"images,omitempty"` // Images associated with the message
+	Role    Role           `json:"role"`             // Role of the message (user, assistant, system)
+	Content string         `json:"content"`          // Content of the message
+	Images  *[]Base64Image `json:"images,omitempty"` // Images associated with the message
 }
 
 // Base64Image represents an image encoded in base64.

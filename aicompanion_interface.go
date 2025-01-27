@@ -22,10 +22,10 @@ type AICompanion interface {
 	CreateMessage(role models.Role, input string) models.Message
 
 	// CreateMessageWithImages creates a new message with the given role, input string, and images
-	CreateMessageWithImages(role models.Role, message string, images []models.Base64Image) models.Message
+	CreateMessageWithImages(role models.Role, message string, images *[]models.Base64Image) models.Message
 
 	//CreateUserMessage creates a new user message with the given input string
-	CreateUserMessage(input string, images []models.Base64Image) models.Message
+	CreateUserMessage(input string, images *[]models.Base64Image) models.Message
 
 	// CreateAssistantMessage creates a new assistant message with the given input string
 	CreateAssistantMessage(input string) models.Message

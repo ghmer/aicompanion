@@ -10,19 +10,19 @@ import (
 
 // GenerateRequest represents the request structure for the /api/generate endpoint.
 type CompletionRequest struct {
-	Model     string               `json:"model"`
-	Messages  []models.Message     `json:"messages,omitempty"`
-	Prompt    string               `json:"prompt,omitempty"`
-	Suffix    string               `json:"suffix,omitempty"`
-	Images    []models.Base64Image `json:"images,omitempty"`
-	Format    string               `json:"format,omitempty"`
-	Options   string               `json:"options,omitempty"`
-	System    string               `json:"system,omitempty"`
-	Template  string               `json:"template,omitempty"`
-	Stream    bool                 `json:"stream"`
-	Raw       bool                 `json:"raw,omitempty"`
-	KeepAlive int64                `json:"keep_alive,omitempty"`
-	Context   string               `json:"context,omitempty"`
+	Model     string                `json:"model"`
+	Messages  []models.Message      `json:"messages,omitempty"`
+	Prompt    string                `json:"prompt,omitempty"`
+	Suffix    string                `json:"suffix,omitempty"`
+	Images    *[]models.Base64Image `json:"images,omitempty"`
+	Format    string                `json:"format,omitempty"`
+	Options   string                `json:"options,omitempty"`
+	System    string                `json:"system,omitempty"`
+	Template  string                `json:"template,omitempty"`
+	Stream    bool                  `json:"stream"`
+	Raw       bool                  `json:"raw,omitempty"`
+	KeepAlive int64                 `json:"keep_alive,omitempty"`
+	Context   string                `json:"context,omitempty"`
 }
 
 // ModelResponse represents the response structure for the models endpoint.
