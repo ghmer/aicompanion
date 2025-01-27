@@ -375,7 +375,7 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		return result, err
 	}
 
-	fmt.Println("payloadBytes", payloadBytes)
+	fmt.Println("payloadBytes", string(payloadBytes))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
