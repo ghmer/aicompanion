@@ -31,6 +31,8 @@ func TestAICompanion(t *testing.T) {
 		if message.Content != "Hello!" {
 			t.Errorf("Expected content 'Hello!', got '%s'", message.Content)
 		}
+
+		t.Logf("message: %v", message)
 	})
 
 	t.Run("Test SendMessage", func(t *testing.T) {

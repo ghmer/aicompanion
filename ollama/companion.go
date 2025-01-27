@@ -118,7 +118,12 @@ func (companion *Companion) CreateMessage(role models.Role, input string) models
 	var message models.Message = models.Message{
 		Role:    role,
 		Content: input,
+		Images:  nil,
 	}
+
+	fmt.Printf("Create Message: %v\n", message)
+	bytes, _ := json.Marshal(&message)
+	fmt.Println(string(bytes))
 
 	return message
 }
@@ -130,7 +135,7 @@ func (companion *Companion) CreateMessageWithImages(role models.Role, input stri
 		Content: input,
 		Images:  images,
 	}
-
+	fmt.Println("Create Message with images")
 	return message
 }
 
@@ -245,12 +250,16 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		Stream:   streaming,
 	}
 
+	fmt.Printf("payload: %v\n", payload)
+
 	// Marshal the payload into JSON
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		companion.PrintError(err)
 		return result, err
 	}
+
+	fmt.Printf("payloadBytes: %s\n", string(payloadBytes))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -267,6 +276,8 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		companion.PrintError(err)
 		return result, err
 	}
+
+	fmt.Printf("req: %v\n", req)
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -277,6 +288,7 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		return models.Message{}, err
 	}
 	defer resp.Body.Close()
+	fmt.Printf("resp: %v\n", resp)
 
 	if companion.Config.Output {
 		cancel()
