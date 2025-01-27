@@ -367,20 +367,21 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 		result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
 		if err != nil {
 			companion.PrintError(err)
+			return result, err
 		}
 	} else {
 		var bodyBytes []byte
 		bodyBytes, err = io.ReadAll(resp.Body)
 		if err != nil {
 			companion.PrintError(err)
-			return result, nil
+			return result, err
 		}
 
 		var completionResponse CompletionResponse
 		err = json.Unmarshal(bodyBytes, &completionResponse)
 		if err != nil {
 			companion.PrintError(err)
-			return result, nil
+			return result, err
 		}
 
 		result = completionResponse.Message
@@ -397,7 +398,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	var result models.Message
 	var finalerr error
 	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("unexpected http status: %s, %v", resp.Status, resp)
+		err := fmt.Errorf("unexpected http status: %s, %v", resp.Status, resp.Body)
 		companion.PrintError(err)
 		return models.Message{}, err
 	}

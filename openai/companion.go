@@ -410,6 +410,7 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 	result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
 	if err != nil {
 		companion.PrintError(err)
+		return result, err
 	}
 	companion.Conversation = append(companion.Conversation, result)
 
@@ -422,7 +423,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	var result models.Message
 	var finalerr error
 	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("unexpected http status: %s, %v", resp.Status, resp)
+		err := fmt.Errorf("unexpected http status: %s, %v", resp.Status, resp.Body)
 		companion.PrintError(err)
 		return models.Message{}, err
 	}
