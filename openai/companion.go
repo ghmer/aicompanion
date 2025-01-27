@@ -393,6 +393,8 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
 
+	fmt.Printf("req: %v\n", req)
+
 	// Execute the HTTP request
 	resp, err := companion.Client.Do(req)
 	if err != nil {
@@ -400,6 +402,7 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 		return models.Message{}, err
 	}
 	defer resp.Body.Close()
+	fmt.Printf("resp: %v\n", resp)
 
 	if companion.Config.Output {
 		cancel()
