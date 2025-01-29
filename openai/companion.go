@@ -349,6 +349,8 @@ func (companion *Companion) sendCompletionRequest(message models.Message, stream
 		return result, err
 	}
 
+	fmt.Println("payload", string(payloadBytes))
+
 	var ctx context.Context
 	var cancel context.CancelFunc
 	if companion.Config.Output {

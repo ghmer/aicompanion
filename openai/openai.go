@@ -25,12 +25,12 @@ type ModelResponse struct {
 type CompletionsRequest struct {
 	Model       string   `json:"model"`
 	Prompt      string   `json:"prompt"`
-	MaxTokens   int      `json:"max_tokens"`
-	Temperature float32  `json:"temperature"`
-	TopP        float32  `json:"top_p"`
-	N           int      `json:"n"`
-	Stream      bool     `json:"stream"`
-	Stop        []string `json:"stop"`
+	MaxTokens   int      `json:"max_tokens,omitempty"`
+	Temperature float32  `json:"temperature,omitempty"`
+	TopP        float32  `json:"top_p,omitempty"`
+	N           int      `json:"n,omitempty"`
+	Stream      bool     `json:"stream,omitempty"`
+	Stop        []string `json:"stop,omitempty"`
 }
 
 // Choice represents a single completion choice.
