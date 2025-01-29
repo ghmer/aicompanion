@@ -323,69 +323,23 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 
 // SendGenerateRequest sends a request to the OpenAI API to generate a completion for a given prompt.
 func (companion *Companion) SendGenerateRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
-	var result models.Message
-	var payload CompletionsRequest = CompletionsRequest{
-		Model:  string(companion.Config.AiModels.ChatModel.Model),
-		Prompt: message.Content,
-		Stream: true,
-	}
-
-	// Marshal the payload into JSON
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		companion.PrintError(err)
-		return result, err
-	}
-
-	var ctx context.Context
-	var cancel context.CancelFunc
-	if companion.Config.Output {
-		ctx, cancel = context.WithCancel(context.Background())
-		cs := terminal.NewSpinningCharacter('?', 100, 10)
-		cs.StartSpinning(ctx)
-		defer cancel()
-	}
-
-	// Create and configure the HTTP request
-	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiGenerateURL, bytes.NewBuffer(payloadBytes))
-	if err != nil {
-		companion.PrintError(err)
-		return result, err
-	}
-	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	// Execute the HTTP request
-	resp, err := companion.Client.Do(req)
-	if err != nil {
-		companion.PrintError(err)
-		return models.Message{}, err
-	}
-	defer resp.Body.Close()
-
-	if companion.Config.Output {
-		cancel()
-		companion.ClearLine()
-	}
-
-	// Process the streaming response
-	result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
-	if err != nil {
-		companion.PrintError(err)
-	}
-	companion.Conversation = append(companion.Conversation, result)
-
-	return result, nil
+	return companion.sendCompletionRequest(message, streaming, true, callback)
 }
 
 // ProcessUserInput processes the user input by sending it to the API and handling the response.
 func (companion *Companion) SendChatRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
-	companion.AddMessage(message)
+	return companion.sendCompletionRequest(message, streaming, false, callback)
+}
+
+func (companion *Companion) sendCompletionRequest(message models.Message, streaming bool, addToConversation bool, callback func(m models.Message) error) (models.Message, error) {
+	if addToConversation {
+		companion.AddMessage(message)
+	}
 	var result models.Message
 	var payload ChatRequest = ChatRequest{
 		Model:    companion.Config.AiModels.ChatModel.Model,
 		Messages: companion.PrepareConversation(),
-		Stream:   true,
+		Stream:   streaming,
 	}
 
 	// Marshal the payload into JSON
@@ -478,16 +432,19 @@ Outerloop:
 					break
 				}
 
-				// Print the content from each choice in the chunk
-				msg := companion.CreateAssistantMessage(responseObject.Choices[0].Delta.Content)
-				if callback != nil {
-					if err := callback(msg); err != nil {
-						finalerr = err
-						companion.PrintError(err)
+				switch streamType {
+				case models.Chat:
+					// Print the content from each choice in the chunk
+					msg := companion.CreateAssistantMessage(responseObject.Choices[0].Delta.Content)
+					if callback != nil {
+						if err := callback(msg); err != nil {
+							finalerr = err
+							companion.PrintError(err)
+						}
 					}
+					message.WriteString(responseObject.Choices[0].Delta.Content)
+					companion.Print(responseObject.Choices[0].Delta.Content)
 				}
-				message.WriteString(responseObject.Choices[0].Delta.Content)
-				companion.Print(responseObject.Choices[0].Delta.Content)
 
 				if responseObject.Choices[0].FinishReason == "stop" {
 					result = companion.CreateAssistantMessage(message.String())
