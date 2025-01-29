@@ -331,15 +331,24 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 	return companion.sendCompletionRequest(message, streaming, true, callback)
 }
 
-func (companion *Companion) sendCompletionRequest(message models.Message, streaming bool, addToConversation bool, callback func(m models.Message) error) (models.Message, error) {
-	if addToConversation {
+func (companion *Companion) sendCompletionRequest(message models.Message, streaming bool, useGeneratePrompt bool, callback func(m models.Message) error) (models.Message, error) {
+	if !useGeneratePrompt {
 		companion.AddMessage(message)
 	}
+
 	var result models.Message
 	var payload ChatRequest = ChatRequest{
 		Model:    companion.Config.AiModels.ChatModel.Model,
 		Messages: companion.PrepareConversation(),
 		Stream:   streaming,
+	}
+
+	if useGeneratePrompt {
+		sysmsg := companion.GetSystemRole()
+		if len(message.AlternatePrompt) > 0 {
+			sysmsg = companion.CreateMessage(models.System, message.AlternatePrompt)
+		}
+		payload.Messages = []models.Message{sysmsg, message}
 	}
 
 	// Marshal the payload into JSON
