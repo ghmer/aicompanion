@@ -323,12 +323,12 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 
 // SendGenerateRequest sends a request to the OpenAI API to generate a completion for a given prompt.
 func (companion *Companion) SendGenerateRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
-	return companion.sendCompletionRequest(message, streaming, false, callback)
+	return companion.sendCompletionRequest(message, streaming, true, callback)
 }
 
 // ProcessUserInput processes the user input by sending it to the API and handling the response.
 func (companion *Companion) SendChatRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
-	return companion.sendCompletionRequest(message, streaming, true, callback)
+	return companion.sendCompletionRequest(message, streaming, false, callback)
 }
 
 func (companion *Companion) sendCompletionRequest(message models.Message, streaming bool, useGeneratePrompt bool, callback func(m models.Message) error) (models.Message, error) {
