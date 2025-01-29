@@ -336,7 +336,6 @@ func (companion *Companion) SendChatRequest(message models.Message, streaming bo
 
 // ProcessUserInput processes the user input by sending it to the API and handling the response.
 func (companion *Companion) SendGenerateRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
-	companion.AddMessage(message)
 	var result models.Message
 	var payload CompletionRequest = CompletionRequest{
 		Model:  string(companion.Config.AiModels.ChatModel.Model),

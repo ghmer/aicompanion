@@ -323,7 +323,6 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 
 // SendGenerateRequest sends a request to the OpenAI API to generate a completion for a given prompt.
 func (companion *Companion) SendGenerateRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
-	companion.AddMessage(message)
 	var result models.Message
 	var payload CompletionsRequest = CompletionsRequest{
 		Model:  string(companion.Config.AiModels.ChatModel.Model),
