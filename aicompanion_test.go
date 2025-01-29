@@ -12,7 +12,7 @@ import (
 func TestAICompanion(t *testing.T) {
 	apiKey, vectorApiKey := "", ""
 	config := aicompanion.NewDefaultConfig(models.Ollama, apiKey, "llama3.1:8b", "mxai-embed-large", models.SqlVectorDb, "vectorstore.db", vectorApiKey)
-	config.Output = false
+	config.Output = true
 	companion := aicompanion.NewCompanion(*config)
 	companion.SetSystemRole("you are a helpful assistant")
 
@@ -33,6 +33,15 @@ func TestAICompanion(t *testing.T) {
 		}
 
 		t.Logf("message: %v", message)
+	})
+
+	t.Run("Test GenerateMessage", func(t *testing.T) {
+		msg := companion.CreateMessage(models.User, "Hello!")
+		resp, err := companion.SendGenerateRequest(msg, false, nil)
+		if err != nil {
+			t.Errorf("Failed to get AI response: %v", err)
+		}
+		t.Error(resp)
 	})
 
 	t.Run("Test SendMessage", func(t *testing.T) {
