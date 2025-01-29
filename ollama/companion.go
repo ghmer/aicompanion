@@ -45,6 +45,26 @@ func (companion *Companion) GetEnrichmentPrompt() string {
 	return companion.Config.EnrichmentPrompt
 }
 
+// SetFunctionsPrompt sets a new functions prompt for the companion.
+func (companion *Companion) SetFunctionsPrompt(functionsprompt string) {
+	companion.Config.FunctionsPrompt = functionsprompt
+}
+
+// GetFunctionsPrompt returns the current functions prompt of the companion.
+func (companion *Companion) GetFunctionsPrompt() string {
+	return companion.Config.FunctionsPrompt
+}
+
+// SetSummarizationPrompt sets a new summarization prompt for the companion.
+func (companion *Companion) SetSummarizationPrompt(summarizationprompt string) {
+	companion.Config.SummarizationPrompt = summarizationprompt
+}
+
+// GetSummarizationPrompt returns the current summarization prompt of the companion.
+func (companion *Companion) GetSummarizationPrompt() string {
+	return companion.Config.SummarizationPrompt
+}
+
 // CreateUserMessage creates a new user message with the given input string
 func (companion *Companion) CreateUserMessage(input string, images *[]models.Base64Image) models.Message {
 	if images != nil && len(*images) > 0 {

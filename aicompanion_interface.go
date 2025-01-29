@@ -45,11 +45,23 @@ type AICompanion interface {
 	// SetSystemRole sets a new system role message
 	SetSystemRole(prompt string)
 
-	// GetSystemRole returns the current system role message
+	// GetEnrichmentPrompt returns the current enrichment prompt
 	GetEnrichmentPrompt() string
 
-	// SetSystemRole sets a new system role message
+	// SetEnrichmentPrompt sets a new enrichment prompt
 	SetEnrichmentPrompt(prompt string)
+
+	// GetFunctionsPrompt returns the current functions prompt
+	GetFunctionsPrompt() string
+
+	// SetFunctionsPrompt sets a functions prompt
+	SetFunctionsPrompt(prompt string)
+
+	// GetSummarizationPrompt returns the current summarization prompt
+	GetSummarizationPrompt() string
+
+	// SetSummarizationPrompt sets a summarization prompt
+	SetSummarizationPrompt(prompt string)
 
 	// GetConversation returns the current conversation
 	GetConversation() []models.Message

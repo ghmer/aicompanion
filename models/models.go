@@ -27,18 +27,20 @@ type Document struct {
 
 // Configuration represents the configuration for the application.
 type Configuration struct {
-	ApiProvider      ApiProvider           `json:"api_provider"` // API provider used
-	ApiKey           string                `json:"api_key"`      // API key for authentication
-	ApiEndpoints     ApiEndpointUrls       `json:"api_endpoints"`
-	AiModels         AiModels              `json:"ai_models"` // Specific AI model to use
-	HttpConfig       HttpConfiguration     `json:"http_config"`
-	VectorDBConfig   VectorDbConfiguration `json:"vectordb_config"`
-	MaxMessages      int                   `json:"max_messages"` // Maximum number of messages in a conversation
-	UserColor        string                `json:"term_color"`   // Color for user output in terminal
-	Output           bool                  `json:"term_output"`  // Flag to enable/disabled terminal output
-	SystemPrompt     string                `json:"system_prompt"`
-	EnrichmentPrompt string                `json:"enrichment_prompt"`
-	Color            terminal.TermColor
+	ApiProvider         ApiProvider           `json:"api_provider"` // API provider used
+	ApiKey              string                `json:"api_key"`      // API key for authentication
+	ApiEndpoints        ApiEndpointUrls       `json:"api_endpoints"`
+	AiModels            AiModels              `json:"ai_models"` // Specific AI model to use
+	HttpConfig          HttpConfiguration     `json:"http_config"`
+	VectorDBConfig      VectorDbConfiguration `json:"vectordb_config"`
+	MaxMessages         int                   `json:"max_messages"` // Maximum number of messages in a conversation
+	UserColor           string                `json:"term_color"`   // Color for user output in terminal
+	Output              bool                  `json:"term_output"`  // Flag to enable/disabled terminal output
+	SystemPrompt        string                `json:"system_prompt"`
+	EnrichmentPrompt    string                `json:"enrichment_prompt"`
+	FunctionsPrompt     string                `json:"functions_prompt"`
+	SummarizationPrompt string                `json:"summarization_prompt"`
+	Color               terminal.TermColor
 }
 
 type AiModels struct {
