@@ -384,7 +384,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 
 	// Process the streaming response
 	if streaming {
-		result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
+		result, err = companion.HandleStreamResponse(resp, models.Generate, callback)
 		if err != nil {
 			companion.PrintError(err)
 			return result, err
@@ -404,7 +404,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 			return result, err
 		}
 
-		result = completionResponse.Message
+		result = companion.CreateAssistantMessage(completionResponse.Response)
 	}
 
 	companion.Conversation = append(companion.Conversation, result)
