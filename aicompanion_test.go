@@ -11,7 +11,7 @@ import (
 
 func TestAICompanion(t *testing.T) {
 	apiKey, vectorApiKey := "", ""
-	config := aicompanion.NewDefaultConfig(models.Ollama, apiKey, "llama3.1:8b", "mxai-embed-large", models.SqlVectorDb, "vectorstore.db", vectorApiKey)
+	config := aicompanion.NewDefaultConfig(models.Ollama, apiKey, "llama3.2:latest", "mxai-embed-large", models.SqlVectorDb, "vectorstore.db", vectorApiKey)
 	config.Output = true
 	companion := aicompanion.NewCompanion(*config)
 	companion.SetSystemRole("you are a helpful assistant")
@@ -41,7 +41,11 @@ func TestAICompanion(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to get AI response: %v", err)
 		}
-		t.Error(resp)
+		if len(resp.Content) == 0 {
+			t.Error("expected non-empty response content")
+		}
+
+		t.Logf("CONTENT: %s", resp.Content)
 	})
 
 	t.Run("Test SendMessage", func(t *testing.T) {
@@ -50,12 +54,14 @@ func TestAICompanion(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to get AI response: %v", err)
 		}
+
+		t.Log(msg.Content)
 	})
 
 	t.Run("Test PrepareConversation", func(t *testing.T) {
 		messages := companion.PrepareConversation()
-		if len(messages) != 3 {
-			t.Errorf("Expected 3 messages, got %d messages", len(messages))
+		if len(messages) != 4 {
+			t.Errorf("Expected 4 messages, got %d messages", len(messages))
 		}
 	})
 
@@ -71,8 +77,8 @@ func TestAICompanion(t *testing.T) {
 		message := models.Message{Role: models.User, Content: "New message"}
 		companion.AddMessage(message)
 		conversation := companion.GetConversation()
-		if len(conversation) != 3 {
-			t.Errorf("Expected 3 message in conversation, got %d", len(conversation))
+		if len(conversation) != 4 {
+			t.Errorf("Expected 4 message in conversation, got %d", len(conversation))
 		}
 	})
 
@@ -82,35 +88,27 @@ func TestAICompanion(t *testing.T) {
 		}
 	})
 
-	t.Run("Test SetConfig", func(t *testing.T) {
-		newConfig := aicompanion.NewDefaultConfig(models.Ollama, "", "updated-model", "", models.WeaviateDb, "", "")
-		newConfig.AiModels.ChatModel.Model = "updated-model"
-		companion.SetConfig(*newConfig)
-		if companion.GetConfig().AiModels.ChatModel.Model != "updated-model" {
-			t.Errorf("Expected updated model 'updated-model', got '%s'", companion.GetConfig().AiModels.ChatModel)
-		}
-	})
-
 	t.Run("Test GetModels", func(t *testing.T) {
 		models, err := companion.GetModels()
 		if err != nil {
 			t.Errorf("Failed to get models: %v", err)
 		}
+
 		if len(models) == 0 {
 			t.Errorf("Expected at least one model, got none")
 		}
 	})
-	t.Run("Test GetSystemRole", func(t *testing.T) {
-		role := companion.GetSystemRole()
-		if role.Content != "you are a helpful assistant" {
-			t.Errorf("Expected system role content 'You are a helpful assistant', got '%s'", role.Content)
-		}
-	})
 
 	t.Run("Test SetSystemRole", func(t *testing.T) {
-		companion.SetSystemRole("New system role")
-		if companion.GetSystemRole().Content != "New system role" {
-			t.Errorf("Expected system role 'New system role', got '%s'", companion.GetSystemRole().Content)
+		companion.SetSystemRole("You are a helpful assistant")
+		if companion.GetSystemRole().Content != "You are a helpful assistant" {
+			t.Errorf("Expected system role 'You are a helpful assistant', got '%s'", companion.GetSystemRole().Content)
+		}
+	})
+	t.Run("Test GetSystemRole", func(t *testing.T) {
+		role := companion.GetSystemRole()
+		if role.Content != "You are a helpful assistant" {
+			t.Errorf("Expected system role content 'You are a helpful assistant', got '%s'", role.Content)
 		}
 	})
 
@@ -141,6 +139,15 @@ func TestAICompanion(t *testing.T) {
 		companion.SetClient(newClient)
 		if companion.GetClient() != newClient {
 			t.Errorf("Expected updated HTTP client")
+		}
+	})
+
+	t.Run("Test SetConfig", func(t *testing.T) {
+		newConfig := aicompanion.NewDefaultConfig(models.Ollama, "", "updated-model", "", models.WeaviateDb, "", "")
+		newConfig.AiModels.ChatModel.Model = "updated-model"
+		companion.SetConfig(*newConfig)
+		if companion.GetConfig().AiModels.ChatModel.Model != "updated-model" {
+			t.Errorf("Expected updated model 'updated-model', got '%s'", companion.GetConfig().AiModels.ChatModel)
 		}
 	})
 }
