@@ -1,6 +1,7 @@
 package openai
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -392,89 +393,114 @@ func (companion *Companion) sendCompletionRequest(message models.Message, stream
 	}
 
 	// Process the streaming response
-	result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
-	if err != nil {
-		companion.PrintError(err)
-		return result, err
+	if streaming {
+		result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
+		if err != nil {
+			companion.PrintError(err)
+			return result, err
+		}
+	} else {
+		var bodyBytes []byte
+		bodyBytes, err = io.ReadAll(resp.Body)
+		if err != nil {
+			companion.PrintError(err)
+			return result, err
+		}
+
+		var completionResponse ChatResponse
+		err = json.Unmarshal(bodyBytes, &completionResponse)
+		if err != nil {
+			companion.PrintError(err)
+			return result, err
+		}
+
+		result = completionResponse.Choices[0].Message
 	}
+
 	companion.Conversation = append(companion.Conversation, result)
 
 	return result, nil
 }
 
-// handleStreamResponse handles the streaming response from the API.
-func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
-	var message strings.Builder
-	var result models.Message
-	var finalerr error
+func (c *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
 	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("unexpected http status: %s, %v", resp.Status, resp.Body)
-		companion.PrintError(err)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			err = fmt.Errorf("unexpected HTTP status: %s, and failed to read body: %v", resp.Status, err)
+			c.PrintError(err)
+			return models.Message{}, err
+		}
+		err = fmt.Errorf("unexpected HTTP status: %s, body: %s", resp.Status, string(bodyBytes))
+		c.PrintError(err)
 		return models.Message{}, err
 	}
 
-	buffer := make([]byte, companion.Config.HttpConfig.BufferSize)
-	if companion.Config.Output {
-		companion.Print("> ")
+	var message strings.Builder
+	var result models.Message
+	var finalErr error
+
+	if c.Config.Output {
+		c.Print("> ")
 	}
-	// handle response
-Outerloop:
-	for {
-		n, err := resp.Body.Read(buffer) // Read data from the response body into a buffer
-		if n > 0 {
-			lines := strings.Split(string(buffer[:n]), "\n") // Split the buffer content by newline characters to get individual lines
-			for _, line := range lines {
-				line = strings.TrimSpace(line) // Remove leading and trailing whitespace from each line
-				if len(line) == 0 {
-					continue
-				}
 
-				if strings.TrimSpace(line) == "[DONE]" { // Check if the line is "[DONE]"
-					break Outerloop
-				}
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if len(line) == 0 {
+			continue
+		}
 
-				line = strings.TrimPrefix(line, "data:")
+		if line == "[DONE]" {
+			break
+		}
 
-				var responseObject ChatResponse
-				if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
-					finalerr = err
-					companion.PrintError(err)
-					companion.Println(line)
-					break
-				}
+		line = strings.TrimPrefix(line, "data:")
+		var responseObject ChatResponse
+		if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
+			finalErr = fmt.Errorf("failed to unmarshal line: %v, error: %w", line, err)
+			c.PrintError(finalErr)
+			break
+		}
 
-				switch streamType {
-				case models.Chat:
-					// Print the content from each choice in the chunk
-					msg := companion.CreateAssistantMessage(responseObject.Choices[0].Delta.Content)
-					if callback != nil {
-						if err := callback(msg); err != nil {
-							finalerr = err
-							companion.PrintError(err)
-						}
-					}
-					message.WriteString(responseObject.Choices[0].Delta.Content)
-					companion.Print(responseObject.Choices[0].Delta.Content)
-				}
+		if len(responseObject.Choices) == 0 {
+			finalErr = fmt.Errorf("no choices in response")
+			c.PrintError(finalErr)
+			break
+		}
 
-				if responseObject.Choices[0].FinishReason == "stop" {
-					result = companion.CreateAssistantMessage(message.String())
-					companion.Println("")
-					break Outerloop
+		choice := responseObject.Choices[0]
+
+		switch streamType {
+		case models.Chat:
+			msg := c.CreateAssistantMessage(choice.Delta.Content)
+			if callback != nil {
+				if err := callback(msg); err != nil {
+					finalErr = fmt.Errorf("callback error: %w", err)
+					c.PrintError(finalErr)
+					return models.Message{}, finalErr
 				}
 			}
+			message.WriteString(choice.Delta.Content)
+			c.Print(choice.Delta.Content)
+		default:
+			finalErr = fmt.Errorf("unsupported stream type: %v", streamType)
+			c.PrintError(finalErr)
+			return models.Message{}, finalErr
 		}
-		// Handle EOF and other errors during streaming
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			finalerr = err
-			companion.PrintError(err) // Print any error that occurred during streaming
+
+		if choice.FinishReason == "stop" {
+			result = c.CreateAssistantMessage(message.String())
+			c.Println("")
 			break
 		}
 	}
 
-	return result, finalerr
+	if err := scanner.Err(); err != nil && err != io.EOF {
+		finalErr = fmt.Errorf("scanner error: %w", err)
+		c.PrintError(finalErr)
+	}
+
+	return result, finalErr
 }
 
 // GetModels retrieves a list of available models from the API.

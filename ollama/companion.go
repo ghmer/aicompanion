@@ -1,6 +1,7 @@
 package ollama
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -425,6 +426,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 	return result, nil
 }
 
+/*
 // handleStreamResponse handles the streaming response from the API.
 func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
 	var message strings.Builder
@@ -508,6 +510,103 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	}
 
 	return result, finalerr
+}
+
+*/
+
+// HandleStreamResponse handles the streaming response from the Ollama API.
+func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
+	var message strings.Builder
+	var result models.Message
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			err := fmt.Errorf("unexpected HTTP status: %s, and failed to read body: %v", resp.Status, readErr)
+			companion.PrintError(err)
+			resp.Body.Close()
+			return models.Message{}, err
+		}
+		err := fmt.Errorf("unexpected HTTP status: %s, body: %s", resp.Status, string(bodyBytes))
+		companion.PrintError(err)
+		resp.Body.Close()
+		return models.Message{}, err
+	}
+	defer resp.Body.Close()
+
+	if companion.Config.Output {
+		companion.Print("> ")
+	}
+
+	scanner := bufio.NewScanner(resp.Body)
+	if companion.Config.HttpConfig.BufferSize > 0 {
+		buf := make([]byte, companion.Config.HttpConfig.BufferSize)
+		scanner.Buffer(buf, companion.Config.HttpConfig.BufferSize)
+	}
+
+OuterLoop:
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if len(line) == 0 {
+			continue
+		}
+
+		if companion.Config.Output {
+			companion.Println(fmt.Sprintf("line: %s", line))
+		}
+
+		var responseObject CompletionResponse
+		if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
+			companion.PrintError(err)
+			companion.Println(line)
+			return models.Message{}, err // Fail fast on unmarshaling error
+		}
+
+		if companion.Config.Output {
+			companion.Println(fmt.Sprintf("stream type: %d", streamType))
+		}
+
+		switch streamType {
+		case models.Chat:
+			// Print the content from each choice in the chunk
+			message.WriteString(responseObject.Message.Content)
+			if callback != nil {
+				if err := callback(responseObject.Message); err != nil {
+					companion.PrintError(err)
+					return models.Message{}, err
+				}
+			}
+			companion.Print(responseObject.Message.Content)
+		case models.Generate:
+			// Print the content from each choice in the chunk
+			message.WriteString(responseObject.Response)
+			if callback != nil {
+				msg := companion.CreateAssistantMessage(responseObject.Response)
+				if err := callback(msg); err != nil {
+					companion.PrintError(err)
+					return models.Message{}, err
+				}
+			}
+			companion.Print(responseObject.Response)
+		default:
+			err := fmt.Errorf("unsupported stream type: %v", streamType)
+			companion.PrintError(err)
+			return models.Message{}, err
+		}
+
+		if responseObject.Done {
+			result = companion.CreateAssistantMessage(message.String())
+			companion.Println("")
+			break OuterLoop
+		}
+	}
+
+	if err := scanner.Err(); err != nil && err != io.EOF {
+		companion.PrintError(err)
+		return models.Message{}, err
+	}
+
+	return result, nil
 }
 
 // GetModels returns a list of available models from the API.

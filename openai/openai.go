@@ -35,10 +35,11 @@ type CompletionsRequest struct {
 
 // Choice represents a single completion choice.
 type Choice struct {
-	Delta        Delta   `json:"delta"`
-	Index        int     `json:"index"`
-	LogProbs     float32 `json:"logprobs,omitempty"`
-	FinishReason string  `json:"finish_reason,omitempty"`
+	Delta        Delta          `json:"delta"`
+	Index        int            `json:"index"`
+	LogProbs     float32        `json:"logprobs,omitempty"`
+	FinishReason string         `json:"finish_reason,omitempty"`
+	Message      models.Message `json:"message,omitempty"`
 }
 
 type Delta struct {
