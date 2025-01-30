@@ -422,16 +422,16 @@ func (companion *Companion) sendCompletionRequest(message models.Message, stream
 	return result, nil
 }
 
-func (c *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
+func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			err = fmt.Errorf("unexpected HTTP status: %s, and failed to read body: %v", resp.Status, err)
-			c.PrintError(err)
+			companion.PrintError(err)
 			return models.Message{}, err
 		}
 		err = fmt.Errorf("unexpected HTTP status: %s, body: %s", resp.Status, string(bodyBytes))
-		c.PrintError(err)
+		companion.PrintError(err)
 		return models.Message{}, err
 	}
 
@@ -439,9 +439,7 @@ func (c *Companion) HandleStreamResponse(resp *http.Response, streamType models.
 	var result models.Message
 	var finalErr error
 
-	if c.Config.Output {
-		c.Print("> ")
-	}
+	companion.Print("> ")
 
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
@@ -458,13 +456,13 @@ func (c *Companion) HandleStreamResponse(resp *http.Response, streamType models.
 		var responseObject ChatResponse
 		if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
 			finalErr = fmt.Errorf("failed to unmarshal line: %v, error: %w", line, err)
-			c.PrintError(finalErr)
+			companion.PrintError(finalErr)
 			break
 		}
 
 		if len(responseObject.Choices) == 0 {
 			finalErr = fmt.Errorf("no choices in response")
-			c.PrintError(finalErr)
+			companion.PrintError(finalErr)
 			break
 		}
 
@@ -472,32 +470,32 @@ func (c *Companion) HandleStreamResponse(resp *http.Response, streamType models.
 
 		switch streamType {
 		case models.Chat:
-			msg := c.CreateAssistantMessage(choice.Delta.Content)
+			msg := companion.CreateAssistantMessage(choice.Delta.Content)
 			if callback != nil {
 				if err := callback(msg); err != nil {
 					finalErr = fmt.Errorf("callback error: %w", err)
-					c.PrintError(finalErr)
+					companion.PrintError(finalErr)
 					return models.Message{}, finalErr
 				}
 			}
 			message.WriteString(choice.Delta.Content)
-			c.Print(choice.Delta.Content)
+			companion.Print(choice.Delta.Content)
 		default:
 			finalErr = fmt.Errorf("unsupported stream type: %v", streamType)
-			c.PrintError(finalErr)
+			companion.PrintError(finalErr)
 			return models.Message{}, finalErr
 		}
 
 		if choice.FinishReason == "stop" {
-			result = c.CreateAssistantMessage(message.String())
-			c.Println("")
+			result = companion.CreateAssistantMessage(message.String())
+			companion.Println("")
 			break
 		}
 	}
 
 	if err := scanner.Err(); err != nil && err != io.EOF {
 		finalErr = fmt.Errorf("scanner error: %w", err)
-		c.PrintError(finalErr)
+		companion.PrintError(finalErr)
 	}
 
 	return result, finalErr

@@ -352,10 +352,6 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 		return result, err
 	}
 
-	if companion.Config.Output {
-		companion.Println(string(payloadBytes))
-	}
-
 	var ctx context.Context
 	var cancel context.CancelFunc
 	if companion.Config.Output {
@@ -373,10 +369,6 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 	}
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
-
-	if companion.Config.Output {
-		companion.Println(fmt.Sprintf("request: %v", req))
-	}
 
 	// Execute the HTTP request
 	resp, err := companion.Client.Do(req)
@@ -406,10 +398,6 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 			return result, err
 		}
 
-		if companion.Config.Output {
-			companion.Println(string(bodyBytes))
-		}
-
 		var completionResponse CompletionResponse
 		err = json.Unmarshal(bodyBytes, &completionResponse)
 		if err != nil {
@@ -425,94 +413,6 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 
 	return result, nil
 }
-
-/*
-// handleStreamResponse handles the streaming response from the API.
-func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
-	var message strings.Builder
-	var result models.Message
-	var finalerr error
-	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("unexpected http status: %s, %v", resp.Status, resp.Body)
-		companion.PrintError(err)
-		return models.Message{}, err
-	}
-
-	buffer := make([]byte, companion.Config.HttpConfig.BufferSize)
-	if companion.Config.Output {
-		companion.Print("> ")
-	}
-	// handle response
-	for {
-		n, err := resp.Body.Read(buffer) // Read data from the response body into a buffer
-		if n > 0 {
-			lines := strings.Split(string(buffer[:n]), "\n") // Split the buffer content by newline characters to get individual lines
-			for _, line := range lines {
-				line = strings.TrimSpace(line) // Remove leading and trailing whitespace from each line
-				if len(line) == 0 {
-					continue
-				}
-
-				if companion.Config.Output {
-					companion.Println(fmt.Sprintf("line: %s", line))
-				}
-				var responseObject CompletionResponse
-				if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
-					companion.PrintError(err)
-					companion.Println(line)
-					finalerr = err
-					break
-				}
-
-				if companion.Config.Output {
-					companion.Println(fmt.Sprintf("stream type: %d", streamType))
-				}
-
-				switch streamType {
-				case models.Chat:
-					// Print the content from each choice in the chunk
-					message.WriteString(responseObject.Message.Content)
-					if callback != nil {
-						if err := callback(responseObject.Message); err != nil {
-							finalerr = err
-							companion.PrintError(err)
-						}
-					}
-					companion.Print(responseObject.Message.Content)
-				case models.Generate:
-					// Print the content from each choice in the chunk
-					message.WriteString(responseObject.Response)
-					if callback != nil {
-						msg := companion.CreateAssistantMessage(responseObject.Response)
-						if err := callback(msg); err != nil {
-							finalerr = err
-							companion.PrintError(err)
-						}
-					}
-					companion.Print(responseObject.Response)
-				}
-
-				if responseObject.Done {
-					result = companion.CreateAssistantMessage(message.String())
-					companion.Println("")
-					break
-				}
-			}
-		}
-		// Handle EOF and other errors during streaming
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			finalerr = err
-			companion.PrintError(err) // Print any error that occurred during streaming
-			break
-		}
-	}
-
-	return result, finalerr
-}
-
-*/
 
 // HandleStreamResponse handles the streaming response from the Ollama API.
 func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error) {
@@ -534,9 +434,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	}
 	defer resp.Body.Close()
 
-	if companion.Config.Output {
-		companion.Print("> ")
-	}
+	companion.Print("> ")
 
 	scanner := bufio.NewScanner(resp.Body)
 	if companion.Config.HttpConfig.BufferSize > 0 {
@@ -551,19 +449,10 @@ OuterLoop:
 			continue
 		}
 
-		if companion.Config.Output {
-			companion.Println(fmt.Sprintf("line: %s", line))
-		}
-
 		var responseObject CompletionResponse
 		if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
 			companion.PrintError(err)
-			companion.Println(line)
 			return models.Message{}, err // Fail fast on unmarshaling error
-		}
-
-		if companion.Config.Output {
-			companion.Println(fmt.Sprintf("stream type: %d", streamType))
 		}
 
 		switch streamType {
