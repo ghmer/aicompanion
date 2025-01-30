@@ -416,7 +416,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 			return result, err
 		}
 
-		result = completionResponse.Message
+		result = companion.CreateAssistantMessage(completionResponse.Response)
 	}
 
 	// do we really want to do this here?!?
@@ -451,12 +451,19 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 					continue
 				}
 
+				if companion.Config.Output {
+					companion.Println(fmt.Sprintf("line: %s", line))
+				}
 				var responseObject CompletionResponse
 				if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
 					companion.PrintError(err)
 					companion.Println(line)
 					finalerr = err
 					break
+				}
+
+				if companion.Config.Output {
+					companion.Println(fmt.Sprintf("stream type: %d", streamType))
 				}
 
 				switch streamType {
