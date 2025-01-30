@@ -351,6 +351,10 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 		return result, err
 	}
 
+	if companion.Config.Output {
+		companion.Println(string(payloadBytes))
+	}
+
 	var ctx context.Context
 	var cancel context.CancelFunc
 	if companion.Config.Output {
@@ -368,6 +372,10 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 	}
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
+
+	if companion.Config.Output {
+		companion.Println(fmt.Sprintf("request: %v", req))
+	}
 
 	// Execute the HTTP request
 	resp, err := companion.Client.Do(req)
@@ -397,6 +405,10 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 			return result, err
 		}
 
+		if companion.Config.Output {
+			companion.Println(string(bodyBytes))
+		}
+
 		var completionResponse CompletionResponse
 		err = json.Unmarshal(bodyBytes, &completionResponse)
 		if err != nil {
@@ -407,6 +419,7 @@ func (companion *Companion) SendGenerateRequest(message models.Message, streamin
 		result = completionResponse.Message
 	}
 
+	// do we really want to do this here?!?
 	companion.Conversation = append(companion.Conversation, result)
 
 	return result, nil
