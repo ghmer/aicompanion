@@ -27,24 +27,44 @@ type Document struct {
 
 // Configuration represents the configuration for the application.
 type Configuration struct {
-	ApiProvider         ApiProvider           `json:"api_provider"` // API provider used
-	ApiKey              string                `json:"api_key"`      // API key for authentication
-	ApiEndpoints        ApiEndpointUrls       `json:"api_endpoints"`
-	AiModels            AiModels              `json:"ai_models"` // Specific AI model to use
-	HttpConfig          HttpConfiguration     `json:"http_config"`
-	VectorDBConfig      VectorDbConfiguration `json:"vectordb_config"`
-	MaxMessages         int                   `json:"max_messages"` // Maximum number of messages in a conversation
-	UserColor           string                `json:"term_color"`   // Color for user output in terminal
-	Output              bool                  `json:"term_output"`  // Flag to enable/disabled terminal output
-	SystemPrompt        string                `json:"system_prompt"`
-	EnrichmentPrompt    string                `json:"enrichment_prompt"`
-	FunctionsPrompt     string                `json:"functions_prompt"`
-	SummarizationPrompt string                `json:"summarization_prompt"`
-	Color               terminal.TermColor
+	ApiProvider     ApiProvider       `json:"api_provider"` // API provider used
+	ApiKey          string            `json:"api_key"`      // API key for authentication
+	ApiEndpoints    ApiEndpointUrls   `json:"api_endpoints"`
+	AiModels        AiModels          `json:"ai_models"` // Specific AI model to use
+	HttpConfig      HttpConfiguration `json:"http_config"`
+	MaxMessages     int               `json:"max_messages"` // Maximum number of messages in a conversation
+	IncludeStrategy IncludeStrategy   `json:"include_strategy"`
+	Terminal        Terminal          `json:"terminal"`
+	Prompt          Prompt            `json:"prompts"`
 }
 
+type IncludeStrategy string
+
+const (
+	IncludeBoth      IncludeStrategy = "both"
+	IncludeAssistant IncludeStrategy = "assistant"
+	IncludeUser      IncludeStrategy = "user"
+)
+
+type Terminal struct {
+	UserColor string `json:"term_color"`  // Color for user output in terminal
+	Output    bool   `json:"term_output"` // Flag to enable/disabled terminal output
+	Debug     bool   `json:"debug"`
+	Trace     bool   `json:"trace"`
+	Color     terminal.TermColor
+}
+
+type Prompt struct {
+	SystemPrompt        string `json:"system_prompt"`
+	EnrichmentPrompt    string `json:"enrichment_prompt"`
+	FunctionsPrompt     string `json:"functions_prompt"`
+	SummarizationPrompt string `json:"summarization_prompt"`
+}
+
+// AiModels represents the AI models used by the application.
 type AiModels struct {
 	ChatModel      Model `json:"chat_model"`
+	GenerateModel  Model `json:"generate_model"`
 	EmbeddingModel Model `json:"embedding_model"`
 }
 
@@ -57,22 +77,7 @@ type ApiEndpointUrls struct {
 }
 
 type HttpConfiguration struct {
-	MaxInputLength    int `json:"max_input_length"`    // Maximum length of input allowed
 	HTTPClientTimeout int `json:"http_client_timeout"` // HTTP client timeout duration
-	BufferSize        int `json:"buffer_size"`         // Buffer size for processing data
-}
-
-type VectorDbType string
-
-const (
-	SqlVectorDb VectorDbType = "sqlvdb"
-	WeaviateDb  VectorDbType = "weaviate"
-)
-
-type VectorDbConfiguration struct {
-	Type     VectorDbType `json:"type"`
-	Endpoint string       `json:"endpoint_url"`
-	ApiKey   string       `json:"api_key"`
 }
 
 // NewConfigFromFile creates a new Configuration instance from a JSON file.
@@ -99,14 +104,14 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 		return nil, errors.New("invalid configuration: EmbeddingModel is required")
 	}
 
-	if config.UserColor == "" {
-		config.Color = terminal.Green
+	if config.Terminal.UserColor == "" {
+		config.Terminal.Color = terminal.Green
 	} else {
-		color, exists := terminal.TranslateColor(config.UserColor)
+		color, exists := terminal.TranslateColor(config.Terminal.UserColor)
 		if !exists {
-			config.Color = terminal.BrightMagenta
+			config.Terminal.Color = terminal.BrightMagenta
 		} else {
-			config.Color = color
+			config.Terminal.Color = color
 		}
 	}
 
@@ -176,16 +181,8 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 		return nil, errors.New("invalid configuration: ApiModerationURL must start with http:// or https://")
 	}
 
-	if config.HttpConfig.MaxInputLength <= 0 {
-		config.HttpConfig.MaxInputLength = 2038 // Default value
-	}
-
 	if config.HttpConfig.HTTPClientTimeout <= 0 {
 		config.HttpConfig.HTTPClientTimeout = 10 // Default to 10 seconds
-	}
-
-	if config.HttpConfig.BufferSize <= 0 {
-		config.HttpConfig.BufferSize = 1024 // Default to 1KB
 	}
 
 	if config.ApiKey == "" {
@@ -193,6 +190,12 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 	}
 
 	return &config, nil
+}
+
+type MessageRequest struct {
+	OriginalMessage       Message `json:"original_message,omitempty"`
+	Message               Message `json:"message"`
+	RetainOriginalMessage bool    `json:"retain_original"`
 }
 
 // Message represents an individual message in the chat.
@@ -282,3 +285,25 @@ const (
 	Generate StreamType = 1
 	Chat     StreamType = 2
 )
+
+type Function struct {
+	Endpoint           string             `json:"function_endpoint"`
+	ApiKey             string             `json:"function_apikey"`
+	FunctionDefinition FunctionDefinition `json:"function_definition"` // The function definition.
+}
+
+type FunctionDefinition struct {
+	FunctionName string      `json:"function_name"` // The name of the function.
+	Description  string      `json:"description"`
+	Parameters   []Parameter `json:"parameters"` // List of parameters the function takes.
+}
+
+// Parameter represents the details of a single parameter.
+type Parameter struct {
+	Name        string `json:"name"` // Name of the parameter.
+	Type        string `json:"type"` // Type of the parameter.
+	Description string `json:"description"`
+}
+
+type FunctionResponse struct {
+}

@@ -5,53 +5,54 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/ghmer/aicompanion/models"
-	"github.com/ghmer/aicompanion/rag"
 	"github.com/ghmer/aicompanion/terminal"
+	"github.com/ghmer/aicompanion/vectordb"
 )
 
 // Companion represents the AI companion with its configuration, conversation history, and HTTP client.
 type Companion struct {
-	Config         models.Configuration
-	SystemRole     models.Message
-	Conversation   []models.Message
-	Client         *http.Client
-	VectorDbClient *rag.VectorDbClient
+	Config       models.Configuration
+	SystemRole   models.Message
+	Conversation []models.Message
+	HttpClient   *http.Client
+	VectorDb     *vectordb.VectorDb
 }
 
 // SetEnrichmentPrompt sets a new enrichment prompt for the companion.
 func (companion *Companion) SetEnrichmentPrompt(enrichmentprompt string) {
-	companion.Config.EnrichmentPrompt = enrichmentprompt
+	companion.Config.Prompt.EnrichmentPrompt = enrichmentprompt
 }
 
 // GetEnrichmentPrompt returns the current enrichment prompt of the companion.
 func (companion *Companion) GetEnrichmentPrompt() string {
-	return companion.Config.EnrichmentPrompt
+	return companion.Config.Prompt.EnrichmentPrompt
 }
 
 // SetFunctionsPrompt sets a new functions prompt for the companion.
 func (companion *Companion) SetFunctionsPrompt(functionsprompt string) {
-	companion.Config.FunctionsPrompt = functionsprompt
+	companion.Config.Prompt.FunctionsPrompt = functionsprompt
 }
 
 // GetFunctionsPrompt returns the current functions prompt of the companion.
 func (companion *Companion) GetFunctionsPrompt() string {
-	return companion.Config.FunctionsPrompt
+	return companion.Config.Prompt.FunctionsPrompt
 }
 
 // SetSummarizationPrompt sets a new summarization prompt for the companion.
 func (companion *Companion) SetSummarizationPrompt(summarizationprompt string) {
-	companion.Config.SummarizationPrompt = summarizationprompt
+	companion.Config.Prompt.SummarizationPrompt = summarizationprompt
 }
 
 // GetSummarizationPrompt returns the current summarization prompt of the companion.
 func (companion *Companion) GetSummarizationPrompt() string {
-	return companion.Config.SummarizationPrompt
+	return companion.Config.Prompt.SummarizationPrompt
 }
 
 // GetConfig returns the current configuration of the companion.
@@ -62,7 +63,7 @@ func (companion *Companion) GetConfig() models.Configuration {
 // SetConfig sets a new configuration for the companion.
 func (companion *Companion) SetConfig(config models.Configuration) {
 	companion.Config = config
-	companion.SetSystemRole(config.SystemPrompt)
+	companion.SetSystemRole(config.Prompt.SystemPrompt)
 }
 
 // GetCurrentSystemRole returns the current system role of the companion.
@@ -83,12 +84,12 @@ func (companion *Companion) CreateAssistantMessage(input string) models.Message 
 	return companion.CreateMessage(models.Assistant, input)
 }
 
-func (companion *Companion) SetVectorDBClient(vectorDbClient *rag.VectorDbClient) {
-	companion.VectorDbClient = vectorDbClient
+func (companion *Companion) SetVectorDB(vectorDbClient *vectordb.VectorDb) {
+	companion.VectorDb = vectorDbClient
 }
 
-func (companion *Companion) GetVectorDBClient() *rag.VectorDbClient {
-	return companion.VectorDbClient
+func (companion *Companion) GetVectorDB() *vectordb.VectorDb {
+	return companion.VectorDb
 }
 
 // SetCurrentSystemRole sets a new system role for the companion.
@@ -111,21 +112,23 @@ func (companion *Companion) SetConversation(conversation []models.Message) {
 }
 
 // GetClient returns the current HTTP client of the companion.
-func (companion *Companion) GetClient() *http.Client {
-	return companion.Client
+func (companion *Companion) GetHttpClient() *http.Client {
+	return companion.HttpClient
 }
 
 // SetClient sets a new HTTP client for the companion.
-func (companion *Companion) SetClient(client *http.Client) {
-	companion.Client = client
+func (companion *Companion) SetHttpClient(client *http.Client) {
+	companion.HttpClient = client
 }
 
 // prepareConversation prepares the conversation by appending system role and current conversation models.Messages.
-func (companion *Companion) PrepareConversation() []models.Message {
+func (companion *Companion) PrepareConversation(message models.Message) []models.Message {
 	messages := append([]models.Message{companion.SystemRole}, companion.Conversation...)
 	if len(messages) > companion.Config.MaxMessages {
 		messages = messages[len(messages)-companion.Config.MaxMessages:]
 	}
+
+	messages = append(messages, message)
 
 	return messages
 }
@@ -158,22 +161,22 @@ func (companion *Companion) AddMessage(message models.Message) {
 
 // ClearLine clears the current line if output is enabled in the configuration
 func (companion *Companion) ClearLine() {
-	if companion.Config.Output {
+	if companion.Config.Terminal.Output {
 		fmt.Print(terminal.ClearLine)
 	}
 }
 
 // Print prints the given content to the console with color and reset.
 func (companion *Companion) Print(content string) {
-	if companion.Config.Output {
-		fmt.Printf("%s%s%s", companion.Config.Color, content, terminal.Reset)
+	if companion.Config.Terminal.Output {
+		fmt.Printf("%s%s%s", companion.Config.Terminal.Color, content, terminal.Reset)
 	}
 }
 
 // Println prints the given content to the console with color and a newline character, then resets the color.
 func (companion *Companion) Println(content string) {
-	if companion.Config.Output {
-		fmt.Printf("%s%s%s\n", companion.Config.Color, content, terminal.Reset)
+	if companion.Config.Terminal.Output {
+		fmt.Printf("%s%s%s\n", companion.Config.Terminal.Color, content, terminal.Reset)
 	}
 }
 
@@ -195,7 +198,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 
 	var ctx context.Context
 	var cancel context.CancelFunc
-	if companion.Config.Output {
+	if companion.Config.Terminal.Output {
 		ctx, cancel = context.WithCancel(context.Background())
 		cs := terminal.NewSpinningCharacter('?', 100, 10)
 		cs.StartSpinning(ctx)
@@ -212,14 +215,14 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	req.Header.Set("Content-Type", "application/json")
 
 	// Execute the HTTP request
-	resp, err := companion.Client.Do(req)
+	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
 		companion.PrintError(err)
 		return embeddingResponse, err
 	}
 	defer resp.Body.Close()
 
-	if companion.Config.Output {
+	if companion.Config.Terminal.Output {
 		cancel()
 		companion.ClearLine()
 	}
@@ -270,7 +273,7 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 
 	var ctx context.Context
 	var cancel context.CancelFunc
-	if companion.Config.Output {
+	if companion.Config.Terminal.Output {
 		ctx, cancel = context.WithCancel(context.Background())
 		cs := terminal.NewSpinningCharacter('?', 100, 10)
 		cs.StartSpinning(ctx)
@@ -287,14 +290,14 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 	req.Header.Set("Content-Type", "application/json")
 
 	// Execute the HTTP request
-	resp, err := companion.Client.Do(req)
+	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
 		companion.PrintError(err)
 		return moderationResponse, err
 	}
 	defer resp.Body.Close()
 
-	if companion.Config.Output {
+	if companion.Config.Terminal.Output {
 		cancel()
 		companion.ClearLine()
 	}
@@ -323,33 +326,29 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 }
 
 // SendGenerateRequest sends a request to the OpenAI API to generate a completion for a given prompt.
-func (companion *Companion) SendGenerateRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
+func (companion *Companion) SendGenerateRequest(message models.MessageRequest, streaming bool, callback func(m models.Message) error) (models.Message, error) {
 	return companion.sendCompletionRequest(message, streaming, true, callback)
 }
 
 // ProcessUserInput processes the user input by sending it to the API and handling the response.
-func (companion *Companion) SendChatRequest(message models.Message, streaming bool, callback func(m models.Message) error) (models.Message, error) {
+func (companion *Companion) SendChatRequest(message models.MessageRequest, streaming bool, callback func(m models.Message) error) (models.Message, error) {
 	return companion.sendCompletionRequest(message, streaming, false, callback)
 }
 
-func (companion *Companion) sendCompletionRequest(message models.Message, streaming bool, useGeneratePrompt bool, callback func(m models.Message) error) (models.Message, error) {
-	if !useGeneratePrompt {
-		companion.AddMessage(message)
-	}
-
+func (companion *Companion) sendCompletionRequest(message models.MessageRequest, streaming bool, useGeneratePrompt bool, callback func(m models.Message) error) (models.Message, error) {
 	var result models.Message
 	var payload ChatRequest = ChatRequest{
 		Model:    companion.Config.AiModels.ChatModel.Model,
-		Messages: companion.PrepareConversation(),
+		Messages: companion.PrepareConversation(message.Message),
 		Stream:   streaming,
 	}
 
 	if useGeneratePrompt {
 		sysmsg := companion.GetSystemRole()
-		if len(message.AlternatePrompt) > 0 {
-			sysmsg = companion.CreateMessage(models.System, message.AlternatePrompt)
+		if len(message.Message.AlternatePrompt) > 0 {
+			sysmsg = companion.CreateMessage(models.System, message.Message.AlternatePrompt)
 		}
-		payload.Messages = []models.Message{sysmsg, message}
+		payload.Messages = []models.Message{sysmsg, message.Message}
 	}
 
 	// Marshal the payload into JSON
@@ -363,7 +362,7 @@ func (companion *Companion) sendCompletionRequest(message models.Message, stream
 
 	var ctx context.Context
 	var cancel context.CancelFunc
-	if companion.Config.Output {
+	if companion.Config.Terminal.Output {
 		ctx, cancel = context.WithCancel(context.Background())
 		cs := terminal.NewSpinningCharacter('?', 100, 10)
 		cs.StartSpinning(ctx)
@@ -380,14 +379,14 @@ func (companion *Companion) sendCompletionRequest(message models.Message, stream
 	req.Header.Set("Content-Type", "application/json")
 
 	// Execute the HTTP request
-	resp, err := companion.Client.Do(req)
+	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
 		companion.PrintError(err)
 		return models.Message{}, err
 	}
 	defer resp.Body.Close()
 
-	if companion.Config.Output {
+	if companion.Config.Terminal.Output {
 		cancel()
 		companion.ClearLine()
 	}
@@ -417,7 +416,16 @@ func (companion *Companion) sendCompletionRequest(message models.Message, stream
 		result = completionResponse.Choices[0].Message
 	}
 
-	companion.Conversation = append(companion.Conversation, result)
+	if !useGeneratePrompt {
+		switch message.RetainOriginalMessage {
+		case true:
+			companion.AddMessage(message.OriginalMessage)
+		case false:
+			companion.AddMessage(message.Message)
+		}
+
+		companion.AddMessage(result)
+	}
 
 	return result, nil
 }
@@ -514,14 +522,14 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	// Execute the HTTP request
-	resp, err := companion.Client.Do(req)
+	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
 		companion.PrintError(err)
 		return []models.Model{}, err
 	}
 	defer resp.Body.Close()
 
-	if companion.Config.Output {
+	if companion.Config.Terminal.Output {
 		companion.ClearLine()
 	}
 
@@ -550,4 +558,21 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 	}
 
 	return transformedModels, nil
+}
+
+func (companion *Companion) RunFunction(models.Function) (models.FunctionResponse, error) {
+	return models.FunctionResponse{}, errors.New("not implemented")
+}
+
+func (companion *Companion) CreateEmbeddingRequest(input []string) *models.EmbeddingRequest {
+	return &models.EmbeddingRequest{
+		Model: companion.Config.AiModels.EmbeddingModel.Model,
+		Input: input,
+	}
+}
+
+func (companion *Companion) CreateModerationRequest(input string) *models.ModerationRequest {
+	return &models.ModerationRequest{
+		Input: input,
+	}
 }
