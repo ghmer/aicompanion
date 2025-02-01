@@ -10,8 +10,9 @@ import (
 	"sort"
 	"sync"
 
+	_ "modernc.org/sqlite"
+
 	"github.com/ghmer/aicompanion/models"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 // SQLiteVectorDb represents a vector database using SQLite.
