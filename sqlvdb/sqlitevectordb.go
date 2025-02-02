@@ -92,7 +92,7 @@ func (s *SQLiteVectorDb) GetSchema(ctx context.Context, classname string) (inter
 }
 
 // GetSchemaClassNames retrieves the class names of all schemas in the database.
-func (s *SQLiteVectorDb) GetSchemaClassNames(ctx context.Context) ([]string, error) {
+func (s *SQLiteVectorDb) GetSchemas(ctx context.Context) ([]string, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -158,6 +158,15 @@ func (s *SQLiteVectorDb) DeleteSchema(ctx context.Context, classname string) err
 	return nil
 }
 
+// DeleteSchema deletes a schema from the database.
+func (s *SQLiteVectorDb) DeleteSchemas(ctx context.Context, classname []string) error {
+	for _, class := range classname {
+		s.DeleteSchema(ctx, class)
+	}
+
+	return nil
+}
+
 // AddDocument adds a document with the given class name and ID to the database.
 func (s *SQLiteVectorDb) AddDocument(ctx context.Context, classname, id string, document models.Document) error {
 	s.mutex.RLock()
@@ -199,6 +208,17 @@ func (s *SQLiteVectorDb) AddDocuments(ctx context.Context, classname string, doc
 // UpdateDocument updates a document with the given class name and ID in the database.
 func (s *SQLiteVectorDb) UpdateDocument(ctx context.Context, classname, id string, document models.Document) error {
 	return s.AddDocument(ctx, classname, id, document)
+}
+
+// UpdateDocuments updates a document with the given class name and ID in the database.
+func (s *SQLiteVectorDb) UpdateDocuments(ctx context.Context, classname string, documents []models.Document) error {
+	for _, document := range documents {
+		err := s.AddDocument(ctx, classname, document.ID, document)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // QueryDocuments queries documents based on a vector and returns the top result.
