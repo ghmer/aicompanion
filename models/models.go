@@ -38,6 +38,16 @@ type Configuration struct {
 	Prompt          Prompt            `json:"prompts"`
 }
 
+type Conversation struct {
+	Id           string    `json:"id"`
+	Summary      string    `json:"summary"`
+	Conversation []Message `json:"conversation"`
+}
+
+func (c *Conversation) AddMessage(msg Message) {
+	c.Conversation = append(c.Conversation, msg)
+}
+
 type IncludeStrategy string
 
 const (
