@@ -26,7 +26,7 @@ type SQLiteVectorDb struct {
 
 // NewSQLiteVectorDb creates a new SQLite vector database instance.
 func NewSQLiteVectorDb(dbPath string, normalize bool) (*SQLiteVectorDb, error) {
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, err
 	}
