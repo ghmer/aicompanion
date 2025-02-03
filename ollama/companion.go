@@ -25,6 +25,12 @@ type Companion struct {
 	VectorDb     *vectordb.VectorDb
 }
 
+func (companion *Companion) Debug(payload string) {
+	if companion.Config.Terminal.Debug {
+		fmt.Println(payload)
+	}
+}
+
 // GetConfig returns the current configuration of the companion.
 func (companion *Companion) GetConfig() models.Configuration {
 	return companion.Config
@@ -288,6 +294,7 @@ func (companion *Companion) SendChatRequest(message models.MessageRequest, strea
 		companion.PrintError(err)
 		return result, err
 	}
+	companion.Debug(fmt.Sprintf("SendChatRequest: payloadBytes: %s", string(payloadBytes)))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -334,6 +341,8 @@ func (companion *Companion) SendChatRequest(message models.MessageRequest, strea
 			return result, nil
 		}
 
+		companion.Debug(fmt.Sprintf("SendChatRequest: bodyBytes: %s", string(bodyBytes)))
+
 		var completionResponse CompletionResponse
 		err = json.Unmarshal(bodyBytes, &completionResponse)
 		if err != nil {
@@ -371,6 +380,8 @@ func (companion *Companion) SendGenerateRequest(message models.MessageRequest, s
 		companion.PrintError(err)
 		return result, err
 	}
+
+	companion.Debug(fmt.Sprintf("SendChatRequest: payloadBytes: %s", string(payloadBytes)))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -418,6 +429,8 @@ func (companion *Companion) SendGenerateRequest(message models.MessageRequest, s
 			return result, err
 		}
 
+		companion.Debug(fmt.Sprintf("SendChatRequest: payloadBytes: %s", string(payloadBytes)))
+
 		var completionResponse CompletionResponse
 		err = json.Unmarshal(bodyBytes, &completionResponse)
 		if err != nil {
@@ -436,6 +449,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	var message strings.Builder
 	var result models.Message
 
+	companion.Debug(fmt.Sprintf("HandleStreamResponse: resp.StatusCode: %d, status: %s", resp.StatusCode, resp.Status))
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
@@ -458,6 +472,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 OuterLoop:
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
+		companion.Debug(fmt.Sprintf("HandleStreamResponse: line: %s", line))
 		if len(line) == 0 {
 			continue
 		}
@@ -541,6 +556,8 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 		companion.PrintError(err)
 		return []models.Model{}, err
 	}
+
+	companion.Debug(fmt.Sprintf("GetModels: responseBytes: %s", responseBytes))
 
 	var originalResponse ModelResponse
 	err = json.Unmarshal(responseBytes, &originalResponse)

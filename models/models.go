@@ -60,7 +60,6 @@ type Terminal struct {
 	UserColor string `json:"term_color"`  // Color for user output in terminal
 	Output    bool   `json:"term_output"` // Flag to enable/disabled terminal output
 	Debug     bool   `json:"debug"`
-	Trace     bool   `json:"trace"`
 	Color     terminal.TermColor
 }
 

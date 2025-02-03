@@ -25,6 +25,12 @@ type Companion struct {
 	VectorDb     *vectordb.VectorDb
 }
 
+func (companion *Companion) Debug(payload string) {
+	if companion.Config.Terminal.Debug {
+		fmt.Println(payload)
+	}
+}
+
 // SetEnrichmentPrompt sets a new enrichment prompt for the companion.
 func (companion *Companion) SetEnrichmentPrompt(enrichmentprompt string) {
 	companion.Config.Prompt.EnrichmentPrompt = enrichmentprompt
@@ -195,6 +201,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 		companion.PrintError(err)
 		return embeddingResponse, err
 	}
+	companion.Debug(fmt.Sprintf("SendEmbeddingRequest: payload: %s", string(payloadBytes)))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -233,6 +240,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 		companion.PrintError(err)
 		return embeddingResponse, err
 	}
+	companion.Debug(fmt.Sprintf("SendEmbeddingRequest: responseBytes: %s", string(responseBytes)))
 
 	var oaiResponse EmbeddingResponse
 	err = json.Unmarshal(responseBytes, &oaiResponse)
@@ -242,6 +250,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	}
 
 	embeddingResponse = companion.convertToModelEmbeddingResponse(oaiResponse)
+	companion.Debug(fmt.Sprintf("SendEmbeddingRequest: embeddingResponse: %v", embeddingResponse))
 
 	return embeddingResponse, nil
 }
@@ -343,8 +352,10 @@ func (companion *Companion) sendCompletionRequest(message models.MessageRequest,
 		Stream:   streaming,
 	}
 
+	companion.Debug(fmt.Sprintf("sendCompletionRequest: useGeneratePrompt: %v", useGeneratePrompt))
 	if useGeneratePrompt {
 		sysmsg := companion.GetSystemRole()
+		companion.Debug(fmt.Sprintf("sendCompletionRequest: sysmsg: %v", sysmsg))
 		if len(message.Message.AlternatePrompt) > 0 {
 			sysmsg = companion.CreateMessage(models.System, message.Message.AlternatePrompt)
 		}
@@ -358,7 +369,7 @@ func (companion *Companion) sendCompletionRequest(message models.MessageRequest,
 		return result, err
 	}
 
-	fmt.Println("payload", string(payloadBytes))
+	companion.Debug(fmt.Sprintf("sendCompletionRequest: payloadBytes: %s", string(payloadBytes)))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -406,6 +417,8 @@ func (companion *Companion) sendCompletionRequest(message models.MessageRequest,
 			return result, err
 		}
 
+		companion.Debug(fmt.Sprintf("sendCompletionRequest: bodyBytes: %s", string(bodyBytes)))
+
 		var completionResponse ChatResponse
 		err = json.Unmarshal(bodyBytes, &completionResponse)
 		if err != nil {
@@ -452,6 +465,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
+		companion.Debug(fmt.Sprintf("HandleStreamResponse: line: %s", line))
 		if len(line) == 0 {
 			continue
 		}
@@ -539,6 +553,7 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 		companion.PrintError(err)
 		return []models.Model{}, err
 	}
+	companion.Debug(fmt.Sprintf("GetModels: responseBytes: %s", responseBytes))
 
 	var originalResponse ModelResponse
 	err = json.Unmarshal(responseBytes, &originalResponse)
@@ -548,7 +563,8 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 	}
 
 	var transformedModels []models.Model
-	for _, model := range originalResponse.Models {
+	for i, model := range originalResponse.Models {
+		companion.Debug(fmt.Sprintf("GetModels: transforming model: %d", i))
 		var transformedModel models.Model = models.Model{
 			Model: model.ID,
 			Name:  model.ID,
@@ -556,6 +572,8 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 
 		transformedModels = append(transformedModels, transformedModel)
 	}
+
+	companion.Debug(fmt.Sprintf("GetModels: transformedModels: %v", transformedModels))
 
 	return transformedModels, nil
 }
