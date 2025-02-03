@@ -9,15 +9,15 @@ type ModelsRequest struct {
 
 // Model represents a single model in the response.
 type Model struct {
-	ID         string   `json:"id"`
-	Object     string   `json:"object"`
-	Created    int64    `json:"created"`
-	OwnedBy    string   `json:"owned_by"`
-	Permission []string `json:"permission"`
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	Created int64  `json:"created"`
+	OwnedBy string `json:"owned_by"`
 }
 
 // ModelResponse represents the response structure for the models endpoint.
 type ModelResponse struct {
+	Object string  `json:"object"`
 	Models []Model `json:"data"`
 }
 

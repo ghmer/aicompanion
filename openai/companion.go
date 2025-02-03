@@ -558,9 +558,12 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 	var originalResponse ModelResponse
 	err = json.Unmarshal(responseBytes, &originalResponse)
 	if err != nil {
+		companion.Debug(fmt.Sprintf("GetModels: Unmarshal error: %v", err))
 		companion.PrintError(err)
 		return []models.Model{}, err
 	}
+
+	companion.Debug(fmt.Sprintf("GetModels: originalResponse: length: %d, %v", len(originalResponse.Models), originalResponse))
 
 	var transformedModels []models.Model
 	for i, model := range originalResponse.Models {
