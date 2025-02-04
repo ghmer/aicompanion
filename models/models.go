@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ghmer/aicompanion/terminal"
 )
@@ -41,6 +42,8 @@ type Configuration struct {
 type Conversation struct {
 	Id           string    `json:"id"`
 	Summary      string    `json:"summary"`
+	Created      time.Time `json:"created,omitempty"`
+	Updated      time.Time `json:"updated,omitempty"`
 	Conversation []Message `json:"conversation"`
 }
 

@@ -138,7 +138,9 @@ func NewCompanion(config models.Configuration, vectordb *vectordb.VectorDb) AICo
 		}
 	}
 
-	client.SetVectorDB(vectordb)
+	if vectordb != nil {
+		client.SetVectorDB(vectordb)
+	}
 
 	return client
 }
