@@ -569,6 +569,37 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 	return originalResponse.Models, nil
 }
 
-func (companion *Companion) RunFunction(models.Function) (models.FunctionResponse, error) {
-	return models.FunctionResponse{}, errors.New("not implemented")
+// RunFunction executes a function with the provided payload.
+func (companion *Companion) RunFunction(function models.Function, payload []byte) (models.FunctionResponse, error) {
+	result := models.FunctionResponse{}
+
+	// Create and configure the HTTP request
+	req, err := http.NewRequestWithContext(context.Background(), "POST", function.Endpoint, bytes.NewBuffer(payload))
+	if err != nil {
+		companion.PrintError(err)
+		return result, err
+	}
+	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Execute the HTTP request
+	resp, err := companion.HttpClient.Do(req)
+	if err != nil {
+		companion.PrintError(err)
+		return result, err
+	}
+	defer resp.Body.Close()
+
+	responseBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		companion.PrintError(err)
+		return result, err
+	}
+
+	err = json.Unmarshal(responseBytes, &result)
+	if err != nil {
+		companion.PrintError(err)
+		return result, err
+	}
+	return result, nil
 }

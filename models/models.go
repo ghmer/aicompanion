@@ -299,9 +299,9 @@ const (
 )
 
 type Function struct {
-	Endpoint           string             `json:"function_endpoint"`
-	ApiKey             string             `json:"function_apikey"`
-	FunctionDefinition FunctionDefinition `json:"function_definition"` // The function definition.
+	Endpoint   string             `json:"function_endpoint"`
+	ApiKey     string             `json:"function_apikey"`
+	Definition FunctionDefinition `json:"function_definition"` // The function definition.
 }
 
 type FunctionDefinition struct {
@@ -318,4 +318,13 @@ type Parameter struct {
 }
 
 type FunctionResponse struct {
+	Status  FunctionResponseStatus `json:"status"`
+	Message string                 `json:"message"`
 }
+
+type FunctionResponseStatus string
+
+const (
+	FunctionResponseStatusSuccess FunctionResponseStatus = "success"
+	FunctionResponseStatusError   FunctionResponseStatus = "error"
+)

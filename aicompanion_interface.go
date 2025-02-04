@@ -107,7 +107,7 @@ type AICompanion interface {
 	HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error)
 
 	// RunFunction runs a function and returns the response
-	RunFunction(function models.Function) (models.FunctionResponse, error)
+	RunFunction(function models.Function, payload []byte) (models.FunctionResponse, error)
 
 	Debug(payload string)
 }
