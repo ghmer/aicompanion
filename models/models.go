@@ -299,6 +299,7 @@ const (
 )
 
 type Function struct {
+	Id         string             `json:"function_id"`
 	Endpoint   string             `json:"function_endpoint"`
 	ApiKey     string             `json:"function_apikey"`
 	Definition FunctionDefinition `json:"function_definition"` // The function definition.
