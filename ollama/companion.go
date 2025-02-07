@@ -132,15 +132,44 @@ func (companion *Companion) SetHttpClient(client *http.Client) {
 }
 
 // prepareConversation prepares the conversation by appending system role and current conversation messages.
-func (companion *Companion) PrepareConversation(message models.Message) []models.Message {
-	messages := append([]models.Message{companion.SystemRole}, companion.Conversation...)
+func (companion *Companion) PrepareConversation(message models.Message, includeStrategy models.IncludeStrategy) []models.Message {
+	messages := append([]models.Message{companion.SystemRole}, companion.PrepareArray(companion.Conversation, includeStrategy)...)
 	if len(messages) > companion.Config.MaxMessages {
 		messages = messages[len(messages)-companion.Config.MaxMessages:]
 	}
 
-	messages = append(messages, message)
-
 	return messages
+}
+
+// PrepareArray prepares an array of messages based on the includeStrategy.
+func (companion *Companion) PrepareArray(messages []models.Message, includeStrategy models.IncludeStrategy) []models.Message {
+	var newarray []models.Message
+	for _, msg := range messages {
+		switch includeStrategy {
+		case models.IncludeAssistant:
+			{
+				if msg.Role == models.Assistant {
+					newarray = append(newarray, msg)
+				}
+			}
+		case models.IncludeUser:
+			{
+				if msg.Role == models.User {
+					newarray = append(newarray, msg)
+				}
+			}
+		case models.IncludeBoth:
+			{
+				newarray = append(newarray, msg)
+			}
+		default:
+			{
+				newarray = append(newarray, msg)
+			}
+		}
+	}
+
+	return newarray
 }
 
 // createMessage creates a new message with the given role and content.
@@ -284,7 +313,7 @@ func (companion *Companion) SendChatRequest(message models.MessageRequest, strea
 	var result models.Message
 	var payload CompletionRequest = CompletionRequest{
 		Model:    string(companion.Config.AiModels.ChatModel.Model),
-		Messages: companion.PrepareConversation(message.Message),
+		Messages: companion.PrepareConversation(message.Message, companion.Config.IncludeStrategy),
 		Stream:   streaming,
 	}
 
