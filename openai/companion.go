@@ -256,6 +256,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 		return embeddingResponse, err
 	}
 	defer resp.Body.Close()
+	companion.Debug(fmt.Sprintf("SendEmbeddingRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status))
 
 	if companion.Config.Terminal.Output {
 		cancel()
@@ -317,6 +318,8 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 		defer cancel()
 	}
 
+	companion.Debug(fmt.Sprintf("SendModerationRequest: payload %s", string(payloadBytes)))
+
 	// Create and configure the HTTP request
 	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiModerationURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
@@ -333,6 +336,7 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 		return moderationResponse, err
 	}
 	defer resp.Body.Close()
+	companion.Debug(fmt.Sprintf("SendModerationRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status))
 
 	if companion.Config.Terminal.Output {
 		cancel()
@@ -345,6 +349,8 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 		companion.PrintError(err)
 		return moderationResponse, err
 	}
+
+	companion.Debug(fmt.Sprintf("SendModerationRequest: responseBytes %s", string(responseBytes)))
 
 	var originalResponse ModerationResponse
 	err = json.Unmarshal(responseBytes, &originalResponse)
@@ -424,6 +430,8 @@ func (companion *Companion) sendCompletionRequest(message models.MessageRequest,
 		return models.Message{}, err
 	}
 	defer resp.Body.Close()
+
+	companion.Debug(fmt.Sprintf("sendCompletionRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status))
 
 	if companion.Config.Terminal.Output {
 		cancel()
@@ -571,6 +579,8 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 	}
 	defer resp.Body.Close()
 
+	companion.Debug(fmt.Sprintf("GetModels: StatusCode %d, Status %s", resp.StatusCode, resp.Status))
+
 	if companion.Config.Terminal.Output {
 		companion.ClearLine()
 	}
@@ -629,12 +639,16 @@ func (companion *Companion) RunFunction(function models.Function, payload []byte
 		return result, err
 	}
 	defer resp.Body.Close()
+	companion.Debug(fmt.Sprintf("RunFunction: payload %s", string(payload)))
+	companion.Debug(fmt.Sprintf("RunFunction: StatusCode %d, Status %s", resp.StatusCode, resp.Status))
 
 	responseBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		companion.PrintError(err)
 		return result, err
 	}
+
+	companion.Debug(fmt.Sprintf("RunFunction: responseBytes %s", string(responseBytes)))
 
 	err = json.Unmarshal(responseBytes, &result)
 	if err != nil {
