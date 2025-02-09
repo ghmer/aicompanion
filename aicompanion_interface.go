@@ -110,6 +110,8 @@ type AICompanion interface {
 	RunFunction(function models.Function, payload models.FunctionPayload) (models.FunctionResponse, error)
 
 	Debug(payload string)
+
+	Trace(payload string)
 }
 
 // NewCompanion creates a new Companion instance with the provided configuration.
