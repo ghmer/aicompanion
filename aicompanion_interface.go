@@ -15,8 +15,11 @@ import (
 
 // AICompanion defines the interface for interacting with AI models.
 type AICompanion interface {
-	// PrepareConversation
+	// PrepareConversation prepares the conversation by appending system role and current conversation messages.
 	PrepareConversation(message models.Message, includeStrategy models.IncludeStrategy) []models.Message
+
+	// PrepareArray prepares an array of messages by appending the given messages and applying the include strategy.
+	PrepareArray(messages []models.Message, includeStrategy models.IncludeStrategy) []models.Message
 
 	// CreateMessage creates a new message with the given role and input string
 	CreateMessage(role models.Role, input string) models.Message

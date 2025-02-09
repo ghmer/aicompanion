@@ -140,9 +140,7 @@ func (companion *Companion) SetHttpClient(client *http.Client) {
 // prepareConversation prepares the conversation by appending system role and current conversation messages.
 func (companion *Companion) PrepareConversation(message models.Message, includeStrategy models.IncludeStrategy) []models.Message {
 	messages := append([]models.Message{companion.SystemRole}, companion.PrepareArray(companion.Conversation, includeStrategy)...)
-	if len(messages) > companion.Config.MaxMessages {
-		messages = messages[len(messages)-companion.Config.MaxMessages:]
-	}
+	messages = append(messages, message)
 
 	return messages
 }
@@ -173,6 +171,10 @@ func (companion *Companion) PrepareArray(messages []models.Message, includeStrat
 				newarray = append(newarray, msg)
 			}
 		}
+	}
+
+	if len(newarray) > companion.Config.MaxMessages {
+		newarray = newarray[len(newarray)-companion.Config.MaxMessages:]
 	}
 
 	return newarray

@@ -128,15 +128,46 @@ func (companion *MockAICompanion) SetHttpClient(client *http.Client) {
 }
 
 // prepareConversation prepares the conversation by appending system role and current conversation messages.
-func (companion *MockAICompanion) PrepareConversation(message models.Message) []models.Message {
-	messages := append([]models.Message{companion.SystemRole}, companion.Conversation...)
-	if len(messages) > companion.Config.MaxMessages {
-		messages = messages[len(messages)-companion.Config.MaxMessages:]
-	}
-
+func (companion *MockAICompanion) PrepareConversation(message models.Message, includeStrategy models.IncludeStrategy) []models.Message {
+	messages := append([]models.Message{companion.SystemRole}, companion.PrepareArray(companion.Conversation, includeStrategy)...)
 	messages = append(messages, message)
 
 	return messages
+}
+
+// PrepareArray prepares an array of messages based on the includeStrategy.
+func (companion *MockAICompanion) PrepareArray(messages []models.Message, includeStrategy models.IncludeStrategy) []models.Message {
+	var newarray []models.Message
+	for _, msg := range messages {
+		switch includeStrategy {
+		case models.IncludeAssistant:
+			{
+				if msg.Role == models.Assistant {
+					newarray = append(newarray, msg)
+				}
+			}
+		case models.IncludeUser:
+			{
+				if msg.Role == models.User {
+					newarray = append(newarray, msg)
+				}
+			}
+		case models.IncludeBoth:
+			{
+				newarray = append(newarray, msg)
+			}
+		default:
+			{
+				newarray = append(newarray, msg)
+			}
+		}
+	}
+
+	if len(newarray) > companion.Config.MaxMessages {
+		newarray = newarray[len(newarray)-companion.Config.MaxMessages:]
+	}
+
+	return newarray
 }
 
 // createMessage creates a new message with the given role and content.
@@ -283,7 +314,7 @@ func TestAICompanion(t *testing.T) {
 
 	t.Run("Test PrepareConversation", func(t *testing.T) {
 		msg := models.Message{Role: models.User, Content: "Hello"}
-		messages := companion.PrepareConversation(msg)
+		messages := companion.PrepareConversation(msg, models.IncludeBoth)
 		if len(messages) != 1 || messages[0].Content != "Hello" {
 			t.Errorf("PrepareConversation failed, expected %v, got %v", msg, messages)
 		}
