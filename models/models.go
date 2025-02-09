@@ -63,6 +63,7 @@ type Terminal struct {
 	UserColor string `json:"term_color"`  // Color for user output in terminal
 	Output    bool   `json:"term_output"` // Flag to enable/disabled terminal output
 	Debug     bool   `json:"debug"`
+	Trace     bool   `json:"trace"`
 	Color     terminal.TermColor
 }
 
@@ -321,6 +322,11 @@ type Parameter struct {
 type FunctionResponse struct {
 	Status  FunctionResponseStatus `json:"status"`
 	Message string                 `json:"message"`
+}
+
+type FunctionPayload struct {
+	FunctionName string                 `json:"function_name"` // The name of the function.
+	Parameters   map[string]interface{} `json:"parameters"`    // List of parameters the function takes.
 }
 
 type FunctionResponseStatus string

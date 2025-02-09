@@ -1,6 +1,7 @@
 package aicompanion_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -262,6 +263,23 @@ func (companion *MockAICompanion) RunFunction(models.Function) (models.FunctionR
 
 func TestAICompanion(t *testing.T) {
 	companion := &MockAICompanion{}
+
+	t.Run("Test UnMarshalFunctionPayload", func(t *testing.T) {
+		var payload string = `{
+			"function_name":"getFavouriteFood", 
+			"parameters":{
+				"user_id":"mario",
+				"email":"mario@nachbars-netz.link"
+			}
+		}`
+		var payloadObj models.FunctionPayload
+		err := json.Unmarshal([]byte(payload), &payloadObj)
+		if err != nil {
+			t.Errorf("UnMarshalFunctionPayload failed, got %v", err)
+		}
+
+		t.Logf("got payload %v", payloadObj)
+	})
 
 	t.Run("Test PrepareConversation", func(t *testing.T) {
 		msg := models.Message{Role: models.User, Content: "Hello"}

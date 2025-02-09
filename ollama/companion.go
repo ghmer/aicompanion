@@ -31,6 +31,12 @@ func (companion *Companion) Debug(payload string) {
 	}
 }
 
+func (companion *Companion) Trace(payload string) {
+	if companion.Config.Terminal.Trace {
+		fmt.Println(payload)
+	}
+}
+
 // GetConfig returns the current configuration of the companion.
 func (companion *Companion) GetConfig() models.Configuration {
 	return companion.Config
@@ -254,7 +260,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 		return embeddingResponse, err
 	}
 
-	companion.Debug(fmt.Sprintf("SendEmbeddingRequest: payload %s", string(payloadBytes)))
+	companion.Trace(fmt.Sprintf("SendEmbeddingRequest: payload %s", string(payloadBytes)))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -295,7 +301,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 		return embeddingResponse, err
 	}
 
-	companion.Debug(fmt.Sprintf("SendEmbeddingRequest: responseBytes %s", string(responseBytes)))
+	companion.Trace(fmt.Sprintf("SendEmbeddingRequest: responseBytes %s", string(responseBytes)))
 
 	var originalResponse EmbeddingResponse
 	err = json.Unmarshal(responseBytes, &originalResponse)
@@ -328,7 +334,7 @@ func (companion *Companion) SendChatRequest(message models.MessageRequest, strea
 		companion.PrintError(err)
 		return result, err
 	}
-	companion.Debug(fmt.Sprintf("SendChatRequest: payloadBytes: %s", string(payloadBytes)))
+	companion.Trace(fmt.Sprintf("SendChatRequest: payloadBytes: %s", string(payloadBytes)))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -377,7 +383,7 @@ func (companion *Companion) SendChatRequest(message models.MessageRequest, strea
 			return result, nil
 		}
 
-		companion.Debug(fmt.Sprintf("SendChatRequest: bodyBytes: %s", string(bodyBytes)))
+		companion.Trace(fmt.Sprintf("SendChatRequest: bodyBytes: %s", string(bodyBytes)))
 
 		var completionResponse CompletionResponse
 		err = json.Unmarshal(bodyBytes, &completionResponse)
@@ -417,7 +423,7 @@ func (companion *Companion) SendGenerateRequest(message models.MessageRequest, s
 		return result, err
 	}
 
-	companion.Debug(fmt.Sprintf("SendGenerateRequest: payloadBytes: %s", string(payloadBytes)))
+	companion.Trace(fmt.Sprintf("SendGenerateRequest: payloadBytes: %s", string(payloadBytes)))
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -467,7 +473,7 @@ func (companion *Companion) SendGenerateRequest(message models.MessageRequest, s
 			return result, err
 		}
 
-		companion.Debug(fmt.Sprintf("SendGenerateRequest: payloadBytes: %s", string(payloadBytes)))
+		companion.Trace(fmt.Sprintf("SendGenerateRequest: payloadBytes: %s", string(payloadBytes)))
 
 		var completionResponse CompletionResponse
 		err = json.Unmarshal(bodyBytes, &completionResponse)
@@ -510,7 +516,7 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 OuterLoop:
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		companion.Debug(fmt.Sprintf("HandleStreamResponse: line: %s", line))
+		companion.Trace(fmt.Sprintf("HandleStreamResponse: line: %s", line))
 		if len(line) == 0 {
 			continue
 		}
@@ -597,7 +603,7 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 		return []models.Model{}, err
 	}
 
-	companion.Debug(fmt.Sprintf("GetModels: responseBytes: %s", responseBytes))
+	companion.Trace(fmt.Sprintf("GetModels: responseBytes: %s", responseBytes))
 
 	var originalResponse ModelResponse
 	err = json.Unmarshal(responseBytes, &originalResponse)
@@ -610,11 +616,17 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 }
 
 // RunFunction executes a function with the provided payload.
-func (companion *Companion) RunFunction(function models.Function, payload []byte) (models.FunctionResponse, error) {
+func (companion *Companion) RunFunction(function models.Function, payload models.FunctionPayload) (models.FunctionResponse, error) {
 	result := models.FunctionResponse{}
 
+	payloadBytes, err := json.Marshal(payload.Parameters)
+	if err != nil {
+		companion.PrintError(err)
+		return result, err
+	}
+
 	// Create and configure the HTTP request
-	req, err := http.NewRequestWithContext(context.Background(), "POST", function.Endpoint, bytes.NewBuffer(payload))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", function.Endpoint, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		companion.PrintError(err)
 		return result, err
@@ -622,7 +634,7 @@ func (companion *Companion) RunFunction(function models.Function, payload []byte
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	companion.Debug(fmt.Sprintf("RunFunction: payload %s", string(payload)))
+	companion.Trace(fmt.Sprintf("RunFunction: payload %s", string(payloadBytes)))
 
 	// Execute the HTTP request
 	resp, err := companion.HttpClient.Do(req)
@@ -640,7 +652,7 @@ func (companion *Companion) RunFunction(function models.Function, payload []byte
 		return result, err
 	}
 
-	companion.Debug(fmt.Sprintf("RunFunction: responseBytes %s", string(responseBytes)))
+	companion.Trace(fmt.Sprintf("RunFunction: responseBytes %s", string(responseBytes)))
 
 	err = json.Unmarshal(responseBytes, &result)
 	if err != nil {
