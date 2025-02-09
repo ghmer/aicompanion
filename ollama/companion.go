@@ -321,6 +321,8 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 
 // ProcessUserInput processes the user input by sending it to the API and handling the response.
 func (companion *Companion) SendChatRequest(message models.MessageRequest, streaming bool, callback func(m models.Message) error) (models.Message, error) {
+	companion.Trace(fmt.Sprintf("parameters:\nmessage: %v\nstreaming: %v\n", message, streaming))
+	companion.Trace(fmt.Sprintf("message.message.content: %s\n", message.Message.Content))
 	var result models.Message
 	var payload CompletionRequest = CompletionRequest{
 		Model:    string(companion.Config.AiModels.ChatModel.Model),
