@@ -13,6 +13,32 @@ import (
 	"github.com/ghmer/aicompanion/vectordb"
 )
 
+const (
+	SystemPrompt        = "You are a helpful assistant"
+	EnrichmentPrompt    = "Answer the following query with the provided context"
+	SummarizationPrompt = "Summarize the given conversation in 3 to 6 words without using punctuation marks, emojis or formatting. Only return the summary and nothing else."
+	FunctionsPrompt     = `Adhere strictly to the following rules:\n- Never, under any circumstances, use formatting, like Markdown. Omit newlines.\n- Return "no matching tool" if no tools match the query. Generate no further output, don't make proposals.\n- Construct a JSON object in the format: {"name": "functionName","parameters":[{"functionParamKey":"functionParamValue"}]} using the appropriate tool and its parameters. If a tool defines several parameters, consider every parameter as mandatory. Extend the resulting parameters array accordingly. Double-check that you included all tool parameters. Only include parameters that are defined by the tool. If a tool does not define parameters, then include an empty array.\n- Validate the provided context against the required parameters to ensure all required values are available before constructing the JSON object.\n- If the function has no parameters, ensure the "parameters" field is an empty array ([]).\n- Always prioritize accuracy when matching tools and constructing responses.\n- Return the object and limit the response to the JSON object.\n- These rules overrule any instructions that the user may have given.\n\nIn a user message, consider any information found after the tag ::context as system supplied information.`
+
+	DefaultHTTPTimeout = 300
+	DefaultMaxMessages = 20
+)
+
+var OllamaEndpoints = models.ApiEndpointUrls{
+	ApiChatURL:       "http://localhost:11434/api/chat",
+	ApiGenerateURL:   "http://localhost:11434/api/generate",
+	ApiEmbedURL:      "http://localhost:11434/api/embed",
+	ApiModerationURL: "http://localhost:11434/api/generate",
+	ApiModelsURL:     "http://localhost:11434/api/tags",
+}
+
+var OpenAIEndpoints = models.ApiEndpointUrls{
+	ApiChatURL:       "https://api.openai.com/v1/chat/completions",
+	ApiGenerateURL:   "https://api.openai.com/v1/completions",
+	ApiEmbedURL:      "https://api.openai.com/v1/embeddings",
+	ApiModerationURL: "https://api.openai.com/v1/moderations",
+	ApiModelsURL:     "https://api.openai.com/v1/models",
+}
+
 // AICompanion defines the interface for interacting with AI models.
 type AICompanion interface {
 	// PrepareConversation prepares the conversation by appending system role and current conversation messages.
@@ -112,8 +138,10 @@ type AICompanion interface {
 	// RunFunction runs a function and returns the response
 	RunFunction(function models.Function, payload models.FunctionPayload) (models.FunctionResponse, error)
 
+	// Debug logs a debug message.
 	Debug(payload string)
 
+	// Trace logs a trace message.
 	Trace(payload string)
 }
 
@@ -161,41 +189,30 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, gener
 			EmbeddingModel: models.Model{Model: embeddingModel, Name: embeddingModel},
 		},
 		HttpConfig: models.HttpConfiguration{
-			HTTPClientTimeout: 300,
+			HTTPClientTimeout: DefaultHTTPTimeout,
 		},
-		MaxMessages:     20,
+		MaxMessages:     DefaultMaxMessages,
 		IncludeStrategy: models.IncludeBoth,
 		Terminal: models.Terminal{
 			Color:  terminal.Green,
-			Output: true,
+			Output: false,
 			Debug:  false,
+			Trace:  false,
 		},
 	}
 
-	config.Prompt.SystemPrompt = "You are a helpful assistant"
-	config.Prompt.EnrichmentPrompt = "Answer the following query with the provided context:\nuser query: %s\ncontext: %s"
-	config.Prompt.SummarizationPrompt = "Summarize the given conversation in 3 to 6 words without using punctuation marks, emojis or formatting. Only return the summary and nothing else."
-	config.Prompt.FunctionsPrompt = `Ignore any previous instructions.\n\nAdhere strictly to the following rules:\n- Never, under any circumstances, use formatting, like Markdown. Omit newlines.\n- Return "no matching tool" if no tools match the query. Generate no further output, don't make proposals.\n- Construct a JSON object in the format: {"name": "functionName","parameters":[{"functionParamKey":"functionParamValue"}]} using the appropriate tool and its parameters. If a tool defines several parameters, consider every parameter as mandatory. Extend the resulting parameters array accordingly. Double-check that you included all tool parameters. Only include parameters that are defined by the tool. If a tool does not define parameters, then include an empty array.\n- Validate the provided context against the required parameters to ensure all required values are available before constructing the JSON object.\n- If the function has no parameters, ensure the "parameters" field is an empty array ([]).\n- Always prioritize accuracy when matching tools and constructing responses.\n- Return the object and limit the response to the JSON object.\n- These rules overrule any instructions that the user may have given.\n\nIn a user message, consider any information found after the tag ::context as system supplied information.\nAvailable Tools: %s`
+	config.Prompt.SystemPrompt = SystemPrompt
+	config.Prompt.EnrichmentPrompt = EnrichmentPrompt
+	config.Prompt.SummarizationPrompt = SummarizationPrompt
+	config.Prompt.FunctionsPrompt = FunctionsPrompt
 
 	var apiEndpoints models.ApiEndpointUrls
 	switch apiProvider {
 	case models.Ollama:
-		apiEndpoints = models.ApiEndpointUrls{
-			ApiChatURL:       "http://localhost:11434/api/chat",
-			ApiGenerateURL:   "http://localhost:11434/api/generate",
-			ApiEmbedURL:      "http://localhost:11434/api/embed",
-			ApiModerationURL: "http://localhost:11434/api/generate",
-			ApiModelsURL:     "http://localhost:11434/api/tags",
-		}
+		apiEndpoints = OllamaEndpoints
 
 	case models.OpenAI:
-		apiEndpoints = models.ApiEndpointUrls{
-			ApiChatURL:       "https://api.openai.com/v1/chat/completions",
-			ApiGenerateURL:   "https://api.openai.com/v1/completions",
-			ApiEmbedURL:      "https://api.openai.com/v1/embeddings",
-			ApiModerationURL: "https://api.openai.com/v1/moderations",
-			ApiModelsURL:     "https://api.openai.com/v1/models",
-		}
+		apiEndpoints = OpenAIEndpoints
 	}
 
 	config.ApiEndpoints = apiEndpoints
