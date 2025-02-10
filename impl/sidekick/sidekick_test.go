@@ -1,4 +1,4 @@
-package utility_test
+package sidekick_test
 
 import (
 	"bytes"
@@ -7,7 +7,8 @@ import (
 	"image/jpeg"
 	"testing"
 
-	"github.com/ghmer/aicompanion/utility"
+	"github.com/ghmer/aicompanion/impl/sidekick"
+	sidekick_interface "github.com/ghmer/aicompanion/interfaces/sidekick"
 )
 
 // createTestImage generates a simple test image with specified dimensions and color.
@@ -30,9 +31,9 @@ func createTestImage(width, height int, color color.RGBA) ([]byte, error) {
 
 // createTestImage generates a simple test image with specified dimensions and color.
 func TestReadFile(t *testing.T) {
-	utility := utility.CompanionUtility{}
+	sidekick := sidekick_interface.NewSideKick()
 	t.Run("Test ReadFile", func(t *testing.T) {
-		_, err := utility.ReadFile("../README.md")
+		_, err := sidekick.ReadFile("../README.md")
 		if err != nil {
 			t.Error(err)
 		}
@@ -41,7 +42,7 @@ func TestReadFile(t *testing.T) {
 
 // TestResizeImage_ValidInput tests resizing with valid inputs.
 func TestResizeImage_ValidInput(t *testing.T) {
-	utility := utility.CompanionUtility{}
+	sidekick := sidekick_interface.NewSideKick()
 	originalWidth := 1920
 	originalHeight := 1080
 	maxSize := 512
@@ -53,7 +54,7 @@ func TestResizeImage_ValidInput(t *testing.T) {
 	}
 
 	// Perform resize
-	resizedImage, err := utility.ResizeImage(testImage, maxSize)
+	resizedImage, err := sidekick.ResizeImage(testImage, maxSize)
 	if err != nil {
 		t.Fatalf("failed to resize image: %v", err)
 	}
@@ -76,15 +77,15 @@ func TestResizeImage_ValidInput(t *testing.T) {
 
 // TestResizeImage_InvalidInputs tests invalid inputs to ResizeImage.
 func TestResizeImage_InvalidInputs(t *testing.T) {
-	utility := utility.CompanionUtility{}
+	sidekick := sidekick_interface.NewSideKick()
 	// Test with empty image bytes
-	_, err := utility.ResizeImage([]byte{}, 512)
+	_, err := sidekick.ResizeImage([]byte{}, 512)
 	if err == nil {
 		t.Error("expected error for empty input, got nil")
 	}
 
 	// Test with invalid maxSize
-	_, err = utility.ResizeImage([]byte{0xFF, 0xD8, 0xFF}, -100) // Valid JPEG header
+	_, err = sidekick.ResizeImage([]byte{0xFF, 0xD8, 0xFF}, -100) // Valid JPEG header
 	if err == nil {
 		t.Error("expected error for invalid maxSize, got nil")
 	}
@@ -92,7 +93,7 @@ func TestResizeImage_InvalidInputs(t *testing.T) {
 
 // TestResizeImage_AspectRatio tests that aspect ratio is preserved during resizing.
 func TestResizeImage_AspectRatio(t *testing.T) {
-	utility := utility.CompanionUtility{}
+	sidekick := sidekick_interface.NewSideKick()
 	originalWidth := 1280
 	originalHeight := 720
 	maxSize := 256
@@ -104,7 +105,7 @@ func TestResizeImage_AspectRatio(t *testing.T) {
 	}
 
 	// Perform resize
-	resizedImage, err := utility.ResizeImage(testImage, maxSize)
+	resizedImage, err := sidekick.ResizeImage(testImage, maxSize)
 	if err != nil {
 		t.Fatalf("failed to resize image: %v", err)
 	}
@@ -137,7 +138,7 @@ func abs(x float64) float64 {
 
 // TestResizeImage_PredefinedResolutions tests resizing using predefined resolutions.
 func TestResizeImage_PredefinedResolutions(t *testing.T) {
-	util := utility.CompanionUtility{}
+	util := sidekick_interface.NewSideKick()
 	originalWidth := 3840
 	originalHeight := 2160
 
@@ -147,7 +148,7 @@ func TestResizeImage_PredefinedResolutions(t *testing.T) {
 		t.Fatalf("failed to create test image: %v", err)
 	}
 
-	for name, resolution := range []utility.Resolution{utility.Res4K, utility.Res2K, utility.Res1080p, utility.Res720p, utility.Res480p, utility.Res360p, utility.Res320p, utility.Res240p, utility.Res144p, utility.Pixel1024, utility.Pixel512} {
+	for name, resolution := range []sidekick.Resolution{sidekick.Res4K, sidekick.Res2K, sidekick.Res1080p, sidekick.Res720p, sidekick.Res480p, sidekick.Res360p, sidekick.Res320p, sidekick.Res240p, sidekick.Res144p, sidekick.Pixel1024, sidekick.Pixel512} {
 		resizedImage, err := util.ResizeImage(testImage, int(resolution))
 		if err != nil {
 			t.Errorf("failed to resize image to %d: %v", name, err)

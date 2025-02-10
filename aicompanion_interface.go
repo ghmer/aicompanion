@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ghmer/aicompanion/impl/ollama"
+	"github.com/ghmer/aicompanion/impl/openai"
+	sidekick_interface "github.com/ghmer/aicompanion/interfaces/sidekick"
 	"github.com/ghmer/aicompanion/models"
-	"github.com/ghmer/aicompanion/ollama"
-	"github.com/ghmer/aicompanion/openai"
 	"github.com/ghmer/aicompanion/terminal"
-	"github.com/ghmer/aicompanion/utility"
 )
 
 const (
@@ -192,8 +192,8 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, gener
 
 // ReadImageFromFile reads an image from the specified filepath and returns a Base64 encoded image.
 func ReadImageFromFile(filepath string) (models.Base64Image, error) {
-	utility := utility.CompanionUtility{}
-	content, err := utility.ReadFile(filepath)
+	sidekick := sidekick_interface.NewSideKick()
+	content, err := sidekick.ReadFile(filepath)
 	if err != nil {
 		return models.Base64Image{}, err
 	}

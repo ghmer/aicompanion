@@ -1,4 +1,4 @@
-package utility
+package sidekick
 
 import (
 	"bytes"
@@ -38,80 +38,14 @@ const (
 	Pixel512  Resolution = 512
 )
 
-type AICompanionUtility interface {
-	// CreateMessage creates a new message with the given role and input string
-	CreateMessage(role models.Role, input string) models.Message
-
-	// CreateMessageWithImages creates a new message with the given role, input string, and images
-	CreateMessageWithImages(role models.Role, message string, images *[]models.Base64Image) models.Message
-
-	//CreateUserMessage creates a new user message with the given input string
-	CreateUserMessage(input string, images *[]models.Base64Image) models.Message
-
-	// CreateAssistantMessage creates a new assistant message with the given input string
-	CreateAssistantMessage(input string) models.Message
-
-	// CreateEmbeddingRequest creates an embedding request for the given input.
-	CreateEmbeddingRequest(model models.Model, input []string) models.EmbeddingRequest
-
-	// CreateModerationRequest
-	CreateModerationRequest(input string) models.ModerationRequest
-
-	// ResizeImage resizes an image to the specified maximum dimension while maintaining its aspect ratio.
-	ResizeImage(imageBytes []byte, maxSize int) ([]byte, error)
-
-	// DecodeImage decodes image bytes into an image.Image and detects the format.
-	DecodeImage(imageBytes []byte) (image.Image, string, error)
-
-	// Resize resizes an image to the specified width and height using high-quality scaling.
-	Resize(img image.Image, newWidth, newHeight int) image.Image
-
-	// CalculateNewDimensions calculates the new width and height while maintaining the aspect ratio.
-	CalculateNewDimensions(bounds image.Rectangle, maxSize int) (int, int)
-
-	// EncodeImage encodes an image into a specific format (JPEG, PNG, etc.).
-	EncodeImage(img image.Image, format string) ([]byte, error)
-
-	// ReadFile reads a file and returns its base64 encoded content.
-	ReadFile(filepath string) ([]byte, error)
-
-	// RunFunction runs a function and returns the response
-	RunFunction(httpClient *http.Client, function models.Function, payload models.FunctionPayload, debug, trace bool) (models.FunctionResponse, error)
-
-	// Debug logs a debug message.
-	Debug(payload string, termconfig models.Terminal)
-
-	// Trace logs a trace message.
-	Trace(payload string, termconfig models.Terminal)
-
-	// Error logs an error message.
-	Error(err error)
-
-	// ClearLine clears the current line of the terminal
-	ClearLine(termconfig models.Terminal)
-
-	// Print prints the content to the terminal.
-	Print(content string, termconfig models.Terminal)
-
-	// Println prints the content to the terminal.
-	Println(content string, termconfig models.Terminal)
-
-	// PrepareArray filters and limits messages based on the includeStrategy.
-	PrepareArray(messages []models.Message, includeStrategy models.IncludeStrategy, maxMessages int) []models.Message
-}
-
-type CompanionUtility struct {
-}
-
-func NewCompanionUtility() *CompanionUtility {
-	return &CompanionUtility{}
+type SideKick struct {
 }
 
 // ResizeImage resizes an image to the specified maximum dimension while maintaining its aspect ratio.
 // Larger dimension (width or height) will be resized to maxSize.
 // Input: imageBytes []byte (image data), maxSize int (max dimension).
 // Output: Resized image as []byte, error if any issue occurs.
-func (utility *CompanionUtility) ResizeImage(imageBytes []byte, maxSize int) ([]byte, error) {
+func (utility *SideKick) ResizeImage(imageBytes []byte, maxSize int) ([]byte, error) {
 	// Validate input
 	if len(imageBytes) == 0 {
 		return nil, errors.New("input image data is empty")
@@ -142,7 +76,7 @@ func (utility *CompanionUtility) ResizeImage(imageBytes []byte, maxSize int) ([]
 }
 
 // DecodeImage decodes image bytes into an image.Image and detects the format.
-func (utility *CompanionUtility) DecodeImage(imageBytes []byte) (image.Image, string, error) {
+func (utility *SideKick) DecodeImage(imageBytes []byte) (image.Image, string, error) {
 	img, format, err := image.Decode(bytes.NewReader(imageBytes))
 	if err != nil {
 		return nil, "", errors.New("failed to decode image: " + err.Error())
@@ -151,7 +85,7 @@ func (utility *CompanionUtility) DecodeImage(imageBytes []byte) (image.Image, st
 }
 
 // CalculateNewDimensions calculates the new width and height while maintaining the aspect ratio.
-func (utility *CompanionUtility) CalculateNewDimensions(bounds image.Rectangle, maxSize int) (int, int) {
+func (utility *SideKick) CalculateNewDimensions(bounds image.Rectangle, maxSize int) (int, int) {
 	width := bounds.Dx()
 	height := bounds.Dy()
 
@@ -169,14 +103,14 @@ func (utility *CompanionUtility) CalculateNewDimensions(bounds image.Rectangle, 
 }
 
 // Resize resizes an image to the specified width and height using high-quality scaling.
-func (utility *CompanionUtility) Resize(img image.Image, newWidth, newHeight int) image.Image {
+func (utility *SideKick) Resize(img image.Image, newWidth, newHeight int) image.Image {
 	dst := image.NewRGBA(image.Rect(0, 0, newWidth, newHeight))
 	draw.CatmullRom.Scale(dst, dst.Rect, img, img.Bounds(), draw.Over, nil)
 	return dst
 }
 
 // EncodeImage encodes an image into a specific format (JPEG, PNG, etc.).
-func (utility *CompanionUtility) EncodeImage(img image.Image, format string) ([]byte, error) {
+func (utility *SideKick) EncodeImage(img image.Image, format string) ([]byte, error) {
 	var buf bytes.Buffer
 	var err error
 
@@ -197,12 +131,12 @@ func (utility *CompanionUtility) EncodeImage(img image.Image, format string) ([]
 }
 
 // ReadFile reads a file and returns its base64 encoded content.
-func (utility *CompanionUtility) ReadFile(filepath string) ([]byte, error) {
+func (utility *SideKick) ReadFile(filepath string) ([]byte, error) {
 	return os.ReadFile(filepath)
 }
 
 // createMessage creates a new message with the given role and content.
-func (utility *CompanionUtility) CreateMessage(role models.Role, input string) models.Message {
+func (utility *SideKick) CreateMessage(role models.Role, input string) models.Message {
 	var message models.Message = models.Message{
 		Role:    role,
 		Content: input,
@@ -213,7 +147,7 @@ func (utility *CompanionUtility) CreateMessage(role models.Role, input string) m
 }
 
 // CreateMessageWithImages creates a new message with the given role, content and images
-func (utility *CompanionUtility) CreateMessageWithImages(role models.Role, input string, images *[]models.Base64Image) models.Message {
+func (utility *SideKick) CreateMessageWithImages(role models.Role, input string, images *[]models.Base64Image) models.Message {
 	var message models.Message = models.Message{
 		Role:    role,
 		Content: input,
@@ -224,7 +158,7 @@ func (utility *CompanionUtility) CreateMessageWithImages(role models.Role, input
 }
 
 // CreateUserMessage creates a new user message with the given input string
-func (utility *CompanionUtility) CreateUserMessage(input string, images *[]models.Base64Image) models.Message {
+func (utility *SideKick) CreateUserMessage(input string, images *[]models.Base64Image) models.Message {
 	if images != nil && len(*images) > 0 {
 		return utility.CreateMessageWithImages(models.User, input, images)
 	}
@@ -232,24 +166,24 @@ func (utility *CompanionUtility) CreateUserMessage(input string, images *[]model
 }
 
 // CreateAssistantMessage creates a new assistant message with the given input string
-func (utility *CompanionUtility) CreateAssistantMessage(input string) models.Message {
+func (utility *SideKick) CreateAssistantMessage(input string) models.Message {
 	return utility.CreateMessage(models.Assistant, input)
 }
 
-func (utility *CompanionUtility) CreateEmbeddingRequest(model models.Model, input []string) models.EmbeddingRequest {
+func (utility *SideKick) CreateEmbeddingRequest(model models.Model, input []string) models.EmbeddingRequest {
 	return models.EmbeddingRequest{
 		Model: model.Model,
 		Input: input,
 	}
 }
 
-func (utility *CompanionUtility) CreateModerationRequest(input string) models.ModerationRequest {
+func (utility *SideKick) CreateModerationRequest(input string) models.ModerationRequest {
 	return models.ModerationRequest{
 		Input: input,
 	}
 }
 
-func (utility *CompanionUtility) RunFunction(httpClient *http.Client, function models.Function, payload models.FunctionPayload, debug, trace bool) (models.FunctionResponse, error) {
+func (utility *SideKick) RunFunction(httpClient *http.Client, function models.Function, payload models.FunctionPayload, debug, trace bool) (models.FunctionResponse, error) {
 	result := models.FunctionResponse{}
 
 	payloadBytes, err := json.Marshal(payload.Parameters)
@@ -299,45 +233,45 @@ func (utility *CompanionUtility) RunFunction(httpClient *http.Client, function m
 }
 
 // ClearLine clears the current line if output is enabled in the configuration
-func (utility *CompanionUtility) ClearLine(termconfig models.Terminal) {
+func (utility *SideKick) ClearLine(termconfig models.Terminal) {
 	if termconfig.Output {
 		fmt.Print(terminal.ClearLine)
 	}
 }
 
 // Print prints the given content to the console with color and reset.
-func (utility *CompanionUtility) Print(content string, termconfig models.Terminal) {
+func (utility *SideKick) Print(content string, termconfig models.Terminal) {
 	if termconfig.Output {
 		fmt.Printf("%s%s%s", termconfig.Color, content, terminal.Reset)
 	}
 }
 
 // Println prints the given content to the console with color and a newline character, then resets the color.
-func (utility *CompanionUtility) Println(content string, termconfig models.Terminal) {
+func (utility *SideKick) Println(content string, termconfig models.Terminal) {
 	if termconfig.Output {
 		fmt.Printf("%s%s%s\n", termconfig.Color, content, terminal.Reset)
 	}
 }
 
 // PrintError prints an error message to the console in red.
-func (utility *CompanionUtility) Error(err error) {
+func (utility *SideKick) Error(err error) {
 	fmt.Printf("%s%v%s\n", terminal.Red, err, terminal.Reset)
 }
 
-func (utility *CompanionUtility) Debug(payload string, termconfig models.Terminal) {
+func (utility *SideKick) Debug(payload string, termconfig models.Terminal) {
 	if termconfig.Debug {
 		fmt.Println(payload)
 	}
 }
 
-func (utility *CompanionUtility) Trace(payload string, termconfig models.Terminal) {
+func (utility *SideKick) Trace(payload string, termconfig models.Terminal) {
 	if termconfig.Trace {
 		fmt.Println(payload)
 	}
 }
 
 // PrepareArray prepares an array of messages based on the includeStrategy.
-func (utility *CompanionUtility) PrepareArray(messages []models.Message, includeStrategy models.IncludeStrategy, maxMessages int) []models.Message {
+func (utility *SideKick) PrepareArray(messages []models.Message, includeStrategy models.IncludeStrategy, maxMessages int) []models.Message {
 	var newarray []models.Message
 	for _, msg := range messages {
 		switch includeStrategy {

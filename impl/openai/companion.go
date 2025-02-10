@@ -10,12 +10,12 @@ import (
 	"net/http"
 	"strings"
 
+	sidekick_interface "github.com/ghmer/aicompanion/interfaces/sidekick"
 	"github.com/ghmer/aicompanion/models"
 	"github.com/ghmer/aicompanion/terminal"
-	"github.com/ghmer/aicompanion/utility"
 )
 
-var util utility.AICompanionUtility = utility.NewCompanionUtility()
+var sideKick sidekick_interface.SideKickInterface = sidekick_interface.NewSideKick()
 
 // Companion represents the AI companion with its configuration, conversation history, and HTTP client.
 type Companion struct {
@@ -102,7 +102,7 @@ func (companion *Companion) SetHttpClient(client *http.Client) {
 
 // prepareConversation prepares the conversation by appending system role and current conversation messages.
 func (companion *Companion) PrepareConversation(message models.Message, includeStrategy models.IncludeStrategy) []models.Message {
-	messages := append([]models.Message{companion.SystemRole}, util.PrepareArray(companion.Conversation, includeStrategy, companion.Config.MaxMessages)...)
+	messages := append([]models.Message{companion.SystemRole}, sideKick.PrepareArray(companion.Conversation, includeStrategy, companion.Config.MaxMessages)...)
 	messages = append(messages, message)
 
 	return messages
@@ -120,10 +120,10 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	// Marshal the payload into JSON
 	payloadBytes, err := json.Marshal(embedding)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return embeddingResponse, err
 	}
-	util.Trace(fmt.Sprintf("SendEmbeddingRequest: payload: %s", string(payloadBytes)), companion.Config.Terminal)
+	sideKick.Trace(fmt.Sprintf("SendEmbeddingRequest: payload: %s", string(payloadBytes)), companion.Config.Terminal)
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -137,7 +137,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	// Create and configure the HTTP request
 	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiEmbedURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return embeddingResponse, err
 	}
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
@@ -146,34 +146,34 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	// Execute the HTTP request
 	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return embeddingResponse, err
 	}
 	defer resp.Body.Close()
-	util.Debug(fmt.Sprintf("SendEmbeddingRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
+	sideKick.Debug(fmt.Sprintf("SendEmbeddingRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
 
 	if companion.Config.Terminal.Output {
 		cancel()
-		util.ClearLine(companion.Config.Terminal)
+		sideKick.ClearLine(companion.Config.Terminal)
 	}
 
 	// Process the streaming response
 	responseBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return embeddingResponse, err
 	}
-	util.Trace(fmt.Sprintf("SendEmbeddingRequest: responseBytes: %s", string(responseBytes)), companion.Config.Terminal)
+	sideKick.Trace(fmt.Sprintf("SendEmbeddingRequest: responseBytes: %s", string(responseBytes)), companion.Config.Terminal)
 
 	var oaiResponse EmbeddingResponse
 	err = json.Unmarshal(responseBytes, &oaiResponse)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return embeddingResponse, err
 	}
 
 	embeddingResponse = companion.convertToModelEmbeddingResponse(oaiResponse)
-	util.Trace(fmt.Sprintf("SendEmbeddingRequest: embeddingResponse: %v", embeddingResponse), companion.Config.Terminal)
+	sideKick.Trace(fmt.Sprintf("SendEmbeddingRequest: embeddingResponse: %v", embeddingResponse), companion.Config.Terminal)
 
 	return embeddingResponse, nil
 }
@@ -199,7 +199,7 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 	// Marshal the payload into JSON
 	payloadBytes, err := json.Marshal(moderationRequest)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return moderationResponse, err
 	}
 
@@ -212,12 +212,12 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 		defer cancel()
 	}
 
-	util.Trace(fmt.Sprintf("SendModerationRequest: payload %s", string(payloadBytes)), companion.Config.Terminal)
+	sideKick.Trace(fmt.Sprintf("SendModerationRequest: payload %s", string(payloadBytes)), companion.Config.Terminal)
 
 	// Create and configure the HTTP request
 	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiModerationURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return moderationResponse, err
 	}
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
@@ -226,30 +226,30 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 	// Execute the HTTP request
 	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return moderationResponse, err
 	}
 	defer resp.Body.Close()
-	util.Debug(fmt.Sprintf("SendModerationRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
+	sideKick.Debug(fmt.Sprintf("SendModerationRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
 
 	if companion.Config.Terminal.Output {
 		cancel()
-		util.ClearLine(companion.Config.Terminal)
+		sideKick.ClearLine(companion.Config.Terminal)
 	}
 
 	// Process the streaming response
 	responseBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return moderationResponse, err
 	}
 
-	util.Trace(fmt.Sprintf("SendModerationRequest: responseBytes %s", string(responseBytes)), companion.Config.Terminal)
+	sideKick.Trace(fmt.Sprintf("SendModerationRequest: responseBytes %s", string(responseBytes)), companion.Config.Terminal)
 
 	var originalResponse ModerationResponse
 	err = json.Unmarshal(responseBytes, &originalResponse)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return moderationResponse, err
 	}
 
@@ -280,12 +280,12 @@ func (companion *Companion) sendCompletionRequest(message models.MessageRequest,
 		Stream:   streaming,
 	}
 
-	util.Debug(fmt.Sprintf("sendCompletionRequest: useGeneratePrompt: %v", useGeneratePrompt), companion.Config.Terminal)
+	sideKick.Debug(fmt.Sprintf("sendCompletionRequest: useGeneratePrompt: %v", useGeneratePrompt), companion.Config.Terminal)
 	if useGeneratePrompt {
 		sysmsg := companion.GetSystemRole()
-		util.Debug(fmt.Sprintf("sendCompletionRequest: sysmsg: %v", sysmsg), companion.Config.Terminal)
+		sideKick.Debug(fmt.Sprintf("sendCompletionRequest: sysmsg: %v", sysmsg), companion.Config.Terminal)
 		if len(message.Message.AlternatePrompt) > 0 {
-			sysmsg = util.CreateMessage(models.System, message.Message.AlternatePrompt)
+			sysmsg = sideKick.CreateMessage(models.System, message.Message.AlternatePrompt)
 		}
 		payload.Messages = []models.Message{sysmsg, message.Message}
 	}
@@ -293,11 +293,11 @@ func (companion *Companion) sendCompletionRequest(message models.MessageRequest,
 	// Marshal the payload into JSON
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return result, err
 	}
 
-	util.Trace(fmt.Sprintf("sendCompletionRequest: payloadBytes: %s", string(payloadBytes)), companion.Config.Terminal)
+	sideKick.Trace(fmt.Sprintf("sendCompletionRequest: payloadBytes: %s", string(payloadBytes)), companion.Config.Terminal)
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -311,7 +311,7 @@ func (companion *Companion) sendCompletionRequest(message models.MessageRequest,
 	// Create and configure the HTTP request
 	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiChatURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return result, err
 	}
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
@@ -320,39 +320,39 @@ func (companion *Companion) sendCompletionRequest(message models.MessageRequest,
 	// Execute the HTTP request
 	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return models.Message{}, err
 	}
 	defer resp.Body.Close()
 
-	util.Debug(fmt.Sprintf("sendCompletionRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
+	sideKick.Debug(fmt.Sprintf("sendCompletionRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
 
 	if companion.Config.Terminal.Output {
 		cancel()
-		util.ClearLine(companion.Config.Terminal)
+		sideKick.ClearLine(companion.Config.Terminal)
 	}
 
 	// Process the streaming response
 	if streaming {
 		result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
 		if err != nil {
-			util.Error(err)
+			sideKick.Error(err)
 			return result, err
 		}
 	} else {
 		var bodyBytes []byte
 		bodyBytes, err = io.ReadAll(resp.Body)
 		if err != nil {
-			util.Error(err)
+			sideKick.Error(err)
 			return result, err
 		}
 
-		util.Trace(fmt.Sprintf("sendCompletionRequest: bodyBytes: %s", string(bodyBytes)), companion.Config.Terminal)
+		sideKick.Trace(fmt.Sprintf("sendCompletionRequest: bodyBytes: %s", string(bodyBytes)), companion.Config.Terminal)
 
 		var completionResponse ChatResponse
 		err = json.Unmarshal(bodyBytes, &completionResponse)
 		if err != nil {
-			util.Error(err)
+			sideKick.Error(err)
 			return result, err
 		}
 
@@ -378,11 +378,11 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			err = fmt.Errorf("unexpected HTTP status: %s, and failed to read body: %v", resp.Status, err)
-			util.Error(err)
+			sideKick.Error(err)
 			return models.Message{}, err
 		}
 		err = fmt.Errorf("unexpected HTTP status: %s, body: %s", resp.Status, string(bodyBytes))
-		util.Error(err)
+		sideKick.Error(err)
 		return models.Message{}, err
 	}
 
@@ -390,12 +390,12 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	var result models.Message
 	var finalErr error
 
-	util.Print("> ", companion.Config.Terminal)
+	sideKick.Print("> ", companion.Config.Terminal)
 
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		util.Trace(fmt.Sprintf("HandleStreamResponse: line: %s", line), companion.Config.Terminal)
+		sideKick.Trace(fmt.Sprintf("HandleStreamResponse: line: %s", line), companion.Config.Terminal)
 		if len(line) == 0 {
 			continue
 		}
@@ -408,13 +408,13 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 		var responseObject ChatResponse
 		if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
 			finalErr = fmt.Errorf("failed to unmarshal line: %v, error: %w", line, err)
-			util.Error(finalErr)
+			sideKick.Error(finalErr)
 			break
 		}
 
 		if len(responseObject.Choices) == 0 {
 			finalErr = fmt.Errorf("no choices in response")
-			util.Error(finalErr)
+			sideKick.Error(finalErr)
 			break
 		}
 
@@ -422,32 +422,32 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 
 		switch streamType {
 		case models.Chat:
-			msg := util.CreateAssistantMessage(choice.Delta.Content)
+			msg := sideKick.CreateAssistantMessage(choice.Delta.Content)
 			if callback != nil {
 				if err := callback(msg); err != nil {
 					finalErr = fmt.Errorf("callback error: %w", err)
-					util.Error(finalErr)
+					sideKick.Error(finalErr)
 					return models.Message{}, finalErr
 				}
 			}
 			message.WriteString(choice.Delta.Content)
-			util.Print(choice.Delta.Content, companion.Config.Terminal)
+			sideKick.Print(choice.Delta.Content, companion.Config.Terminal)
 		default:
 			finalErr = fmt.Errorf("unsupported stream type: %v", streamType)
-			util.Error(finalErr)
+			sideKick.Error(finalErr)
 			return models.Message{}, finalErr
 		}
 
 		if choice.FinishReason == "stop" {
-			result = util.CreateAssistantMessage(message.String())
-			util.Println("", companion.Config.Terminal)
+			result = sideKick.CreateAssistantMessage(message.String())
+			sideKick.Println("", companion.Config.Terminal)
 			break
 		}
 	}
 
 	if err := scanner.Err(); err != nil && err != io.EOF {
 		finalErr = fmt.Errorf("scanner error: %w", err)
-		util.Error(finalErr)
+		sideKick.Error(finalErr)
 	}
 
 	return result, finalErr
@@ -458,7 +458,7 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 	// Create and configure the HTTP request
 	req, err := http.NewRequest(http.MethodGet, companion.Config.ApiEndpoints.ApiModelsURL, nil)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return []models.Model{}, err
 	}
 
@@ -468,37 +468,37 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 	// Execute the HTTP request
 	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return []models.Model{}, err
 	}
 	defer resp.Body.Close()
 
-	util.Debug(fmt.Sprintf("GetModels: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
+	sideKick.Debug(fmt.Sprintf("GetModels: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
 
 	if companion.Config.Terminal.Output {
-		util.ClearLine(companion.Config.Terminal)
+		sideKick.ClearLine(companion.Config.Terminal)
 	}
 
 	// Process the streaming response
 	responseBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		util.Error(err)
+		sideKick.Error(err)
 		return []models.Model{}, err
 	}
-	util.Trace(fmt.Sprintf("GetModels: responseBytes: %s", responseBytes), companion.Config.Terminal)
+	sideKick.Trace(fmt.Sprintf("GetModels: responseBytes: %s", responseBytes), companion.Config.Terminal)
 
 	var originalResponse ModelResponse
 	err = json.Unmarshal(responseBytes, &originalResponse)
 	if err != nil {
-		util.Error(fmt.Errorf("GetModels: Unmarshal error: %v", err))
+		sideKick.Error(fmt.Errorf("GetModels: Unmarshal error: %v", err))
 		return []models.Model{}, err
 	}
 
-	util.Trace(fmt.Sprintf("GetModels: originalResponse: length: %d, %v", len(originalResponse.Models), originalResponse), companion.Config.Terminal)
+	sideKick.Trace(fmt.Sprintf("GetModels: originalResponse: length: %d, %v", len(originalResponse.Models), originalResponse), companion.Config.Terminal)
 
 	var transformedModels []models.Model
 	for i, model := range originalResponse.Models {
-		util.Trace(fmt.Sprintf("GetModels: transforming model: %d", i), companion.Config.Terminal)
+		sideKick.Trace(fmt.Sprintf("GetModels: transforming model: %d", i), companion.Config.Terminal)
 		var transformedModel models.Model = models.Model{
 			Model: model.ID,
 			Name:  model.ID,
@@ -507,12 +507,12 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 		transformedModels = append(transformedModels, transformedModel)
 	}
 
-	util.Trace(fmt.Sprintf("GetModels: transformedModels: %v", transformedModels), companion.Config.Terminal)
+	sideKick.Trace(fmt.Sprintf("GetModels: transformedModels: %v", transformedModels), companion.Config.Terminal)
 
 	return transformedModels, nil
 }
 
 // RunFunction executes a function with the provided payload.
 func (companion *Companion) RunFunction(function models.Function, payload models.FunctionPayload) (models.FunctionResponse, error) {
-	return util.RunFunction(companion.HttpClient, function, payload, companion.Config.Terminal.Debug, companion.Config.Terminal.Trace)
+	return sideKick.RunFunction(companion.HttpClient, function, payload, companion.Config.Terminal.Debug, companion.Config.Terminal.Trace)
 }

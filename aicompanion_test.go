@@ -12,10 +12,10 @@ import (
 	"testing"
 
 	"github.com/ghmer/aicompanion"
+	sidekick_interface "github.com/ghmer/aicompanion/interfaces/sidekick"
+	"github.com/ghmer/aicompanion/interfaces/vectordb"
 	"github.com/ghmer/aicompanion/models"
 	"github.com/ghmer/aicompanion/terminal"
-	"github.com/ghmer/aicompanion/utility"
-	"github.com/ghmer/aicompanion/vectordb"
 )
 
 const (
@@ -369,7 +369,7 @@ type Payload struct {
 
 func TestAICompanion(t *testing.T) {
 	var companion aicompanion.AICompanion = &MockAICompanion{}
-	utility := utility.CompanionUtility{}
+	sidekick := sidekick_interface.NewSideKick()
 
 	t.Run("Test UnMarshalFunctionPayload", func(t *testing.T) {
 		var payload string = `{
@@ -457,7 +457,7 @@ func TestAICompanion(t *testing.T) {
 	t.Run("Test CreateMessage", func(t *testing.T) {
 		role := models.User
 		content := "Test message"
-		msg := utility.CreateMessage(role, content)
+		msg := sidekick.CreateMessage(role, content)
 		if msg.Role != role || msg.Content != content {
 			t.Errorf("CreateMessage failed, expected role %v and content %v, got role %v and content %v", role, content, msg.Role, msg.Content)
 		}
@@ -467,7 +467,7 @@ func TestAICompanion(t *testing.T) {
 		role := models.User
 		content := "Image message"
 		images := []models.Base64Image{{Data: "iVBORw0KGgo="}}
-		msg := utility.CreateMessageWithImages(role, content, &images)
+		msg := sidekick.CreateMessageWithImages(role, content, &images)
 		if msg.Role != role || msg.Content != content || msg.Images == nil || len(*msg.Images) != 1 {
 			t.Errorf("CreateMessageWithImages failed, expected role %v, content %v, and one image", role, content)
 		}
@@ -476,7 +476,7 @@ func TestAICompanion(t *testing.T) {
 	t.Run("Test CreateUserMessage", func(t *testing.T) {
 		content := "User message"
 		images := []models.Base64Image{}
-		msg := utility.CreateUserMessage(content, &images)
+		msg := sidekick.CreateUserMessage(content, &images)
 		if msg.Role != models.User || msg.Content != content {
 			t.Errorf("CreateUserMessage failed, expected role %v and content %v", models.User, content)
 		}
@@ -484,7 +484,7 @@ func TestAICompanion(t *testing.T) {
 
 	t.Run("Test CreateAssistantMessage", func(t *testing.T) {
 		content := "Assistant message"
-		msg := utility.CreateAssistantMessage(content)
+		msg := sidekick.CreateAssistantMessage(content)
 		if msg.Role != models.Assistant || msg.Content != content {
 			t.Errorf("CreateAssistantMessage failed, expected role %v and content %v", models.Assistant, content)
 		}
