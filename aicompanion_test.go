@@ -14,6 +14,7 @@ import (
 	"github.com/ghmer/aicompanion"
 	"github.com/ghmer/aicompanion/models"
 	"github.com/ghmer/aicompanion/terminal"
+	"github.com/ghmer/aicompanion/utility"
 	"github.com/ghmer/aicompanion/vectordb"
 )
 
@@ -356,6 +357,10 @@ func (companion *MockAICompanion) Trace(payload string) {
 	fmt.Println(payload)
 }
 
+func (companion *MockAICompanion) Error(err error) {
+	fmt.Println(err)
+}
+
 // define a struct for the JSON payload
 type Payload struct {
 	Email  string `json:"email"`
@@ -364,6 +369,7 @@ type Payload struct {
 
 func TestAICompanion(t *testing.T) {
 	var companion aicompanion.AICompanion = &MockAICompanion{}
+	utility := utility.CompanionUtility{}
 
 	t.Run("Test UnMarshalFunctionPayload", func(t *testing.T) {
 		var payload string = `{
@@ -451,7 +457,7 @@ func TestAICompanion(t *testing.T) {
 	t.Run("Test CreateMessage", func(t *testing.T) {
 		role := models.User
 		content := "Test message"
-		msg := companion.CreateMessage(role, content)
+		msg := utility.CreateMessage(role, content)
 		if msg.Role != role || msg.Content != content {
 			t.Errorf("CreateMessage failed, expected role %v and content %v, got role %v and content %v", role, content, msg.Role, msg.Content)
 		}
@@ -461,7 +467,7 @@ func TestAICompanion(t *testing.T) {
 		role := models.User
 		content := "Image message"
 		images := []models.Base64Image{{Data: "iVBORw0KGgo="}}
-		msg := companion.CreateMessageWithImages(role, content, &images)
+		msg := utility.CreateMessageWithImages(role, content, &images)
 		if msg.Role != role || msg.Content != content || msg.Images == nil || len(*msg.Images) != 1 {
 			t.Errorf("CreateMessageWithImages failed, expected role %v, content %v, and one image", role, content)
 		}
@@ -470,7 +476,7 @@ func TestAICompanion(t *testing.T) {
 	t.Run("Test CreateUserMessage", func(t *testing.T) {
 		content := "User message"
 		images := []models.Base64Image{}
-		msg := companion.CreateUserMessage(content, &images)
+		msg := utility.CreateUserMessage(content, &images)
 		if msg.Role != models.User || msg.Content != content {
 			t.Errorf("CreateUserMessage failed, expected role %v and content %v", models.User, content)
 		}
@@ -478,7 +484,7 @@ func TestAICompanion(t *testing.T) {
 
 	t.Run("Test CreateAssistantMessage", func(t *testing.T) {
 		content := "Assistant message"
-		msg := companion.CreateAssistantMessage(content)
+		msg := utility.CreateAssistantMessage(content)
 		if msg.Role != models.Assistant || msg.Content != content {
 			t.Errorf("CreateAssistantMessage failed, expected role %v and content %v", models.Assistant, content)
 		}

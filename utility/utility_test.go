@@ -30,6 +30,7 @@ func createTestImage(width, height int, color color.RGBA) ([]byte, error) {
 
 // createTestImage generates a simple test image with specified dimensions and color.
 func TestReadFile(t *testing.T) {
+	utility := utility.CompanionUtility{}
 	t.Run("Test ReadFile", func(t *testing.T) {
 		_, err := utility.ReadFile("../README.md")
 		if err != nil {
@@ -40,6 +41,7 @@ func TestReadFile(t *testing.T) {
 
 // TestResizeImage_ValidInput tests resizing with valid inputs.
 func TestResizeImage_ValidInput(t *testing.T) {
+	utility := utility.CompanionUtility{}
 	originalWidth := 1920
 	originalHeight := 1080
 	maxSize := 512
@@ -74,6 +76,7 @@ func TestResizeImage_ValidInput(t *testing.T) {
 
 // TestResizeImage_InvalidInputs tests invalid inputs to ResizeImage.
 func TestResizeImage_InvalidInputs(t *testing.T) {
+	utility := utility.CompanionUtility{}
 	// Test with empty image bytes
 	_, err := utility.ResizeImage([]byte{}, 512)
 	if err == nil {
@@ -89,6 +92,7 @@ func TestResizeImage_InvalidInputs(t *testing.T) {
 
 // TestResizeImage_AspectRatio tests that aspect ratio is preserved during resizing.
 func TestResizeImage_AspectRatio(t *testing.T) {
+	utility := utility.CompanionUtility{}
 	originalWidth := 1280
 	originalHeight := 720
 	maxSize := 256
@@ -133,6 +137,7 @@ func abs(x float64) float64 {
 
 // TestResizeImage_PredefinedResolutions tests resizing using predefined resolutions.
 func TestResizeImage_PredefinedResolutions(t *testing.T) {
+	util := utility.CompanionUtility{}
 	originalWidth := 3840
 	originalHeight := 2160
 
@@ -143,7 +148,7 @@ func TestResizeImage_PredefinedResolutions(t *testing.T) {
 	}
 
 	for name, resolution := range []utility.Resolution{utility.Res4K, utility.Res2K, utility.Res1080p, utility.Res720p, utility.Res480p, utility.Res360p, utility.Res320p, utility.Res240p, utility.Res144p, utility.Pixel1024, utility.Pixel512} {
-		resizedImage, err := utility.ResizeImage(testImage, int(resolution))
+		resizedImage, err := util.ResizeImage(testImage, int(resolution))
 		if err != nil {
 			t.Errorf("failed to resize image to %d: %v", name, err)
 			continue

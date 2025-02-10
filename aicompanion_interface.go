@@ -44,27 +44,6 @@ type AICompanion interface {
 	// PrepareConversation prepares the conversation by appending system role and current conversation messages.
 	PrepareConversation(message models.Message, includeStrategy models.IncludeStrategy) []models.Message
 
-	// PrepareArray prepares an array of messages by appending the given messages and applying the include strategy.
-	PrepareArray(messages []models.Message, includeStrategy models.IncludeStrategy) []models.Message
-
-	// CreateMessage creates a new message with the given role and input string
-	CreateMessage(role models.Role, input string) models.Message
-
-	// CreateMessageWithImages creates a new message with the given role, input string, and images
-	CreateMessageWithImages(role models.Role, message string, images *[]models.Base64Image) models.Message
-
-	//CreateUserMessage creates a new user message with the given input string
-	CreateUserMessage(input string, images *[]models.Base64Image) models.Message
-
-	// CreateAssistantMessage creates a new assistant message with the given input string
-	CreateAssistantMessage(input string) models.Message
-
-	// CreateEmbeddingRequest creates an embedding request for the given input.
-	CreateEmbeddingRequest(input []string) *models.EmbeddingRequest
-
-	// CreateModerationRequest
-	CreateModerationRequest(input string) *models.ModerationRequest
-
 	// AddMessage adds a new message to the conversation
 	AddMessage(message models.Message)
 
@@ -137,12 +116,6 @@ type AICompanion interface {
 
 	// RunFunction runs a function and returns the response
 	RunFunction(function models.Function, payload models.FunctionPayload) (models.FunctionResponse, error)
-
-	// Debug logs a debug message.
-	Debug(payload string)
-
-	// Trace logs a trace message.
-	Trace(payload string)
 }
 
 // NewCompanion creates a new Companion instance with the provided configuration.
@@ -222,6 +195,7 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, gener
 
 // ReadImageFromFile reads an image from the specified filepath and returns a Base64 encoded image.
 func ReadImageFromFile(filepath string) (models.Base64Image, error) {
+	utility := utility.CompanionUtility{}
 	content, err := utility.ReadFile(filepath)
 	if err != nil {
 		return models.Base64Image{}, err

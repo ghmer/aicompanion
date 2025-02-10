@@ -13,8 +13,11 @@ import (
 
 	"github.com/ghmer/aicompanion/models"
 	"github.com/ghmer/aicompanion/terminal"
+	"github.com/ghmer/aicompanion/utility"
 	"github.com/ghmer/aicompanion/vectordb"
 )
+
+var util utility.AICompanionUtility = utility.NewCompanionUtility()
 
 // Companion represents the AI companion with its configuration, conversation history, and HTTP client.
 type Companion struct {
@@ -23,18 +26,6 @@ type Companion struct {
 	Conversation []models.Message
 	HttpClient   *http.Client
 	VectorDb     *vectordb.VectorDb
-}
-
-func (companion *Companion) Debug(payload string) {
-	if companion.Config.Terminal.Debug {
-		fmt.Println(payload)
-	}
-}
-
-func (companion *Companion) Trace(payload string) {
-	if companion.Config.Terminal.Trace {
-		fmt.Println(payload)
-	}
 }
 
 // GetConfig returns the current configuration of the companion.
@@ -76,19 +67,6 @@ func (companion *Companion) SetSummarizationPrompt(summarizationprompt string) {
 // GetSummarizationPrompt returns the current summarization prompt of the companion.
 func (companion *Companion) GetSummarizationPrompt() string {
 	return companion.Config.Prompt.SummarizationPrompt
-}
-
-// CreateUserMessage creates a new user message with the given input string
-func (companion *Companion) CreateUserMessage(input string, images *[]models.Base64Image) models.Message {
-	if images != nil && len(*images) > 0 {
-		return companion.CreateMessageWithImages(models.User, input, images)
-	}
-	return companion.CreateMessage(models.User, input)
-}
-
-// CreateAssistantMessage creates a new assistant message with the given input string
-func (companion *Companion) CreateAssistantMessage(input string) models.Message {
-	return companion.CreateMessage(models.Assistant, input)
 }
 
 // SetVectorDBClient sets a new vector database client for the companion.
@@ -139,67 +117,10 @@ func (companion *Companion) SetHttpClient(client *http.Client) {
 
 // prepareConversation prepares the conversation by appending system role and current conversation messages.
 func (companion *Companion) PrepareConversation(message models.Message, includeStrategy models.IncludeStrategy) []models.Message {
-	messages := append([]models.Message{companion.SystemRole}, companion.PrepareArray(companion.Conversation, includeStrategy)...)
+	messages := append([]models.Message{companion.SystemRole}, util.PrepareArray(companion.Conversation, includeStrategy, companion.Config.MaxMessages)...)
 	messages = append(messages, message)
 
 	return messages
-}
-
-// PrepareArray prepares an array of messages based on the includeStrategy.
-func (companion *Companion) PrepareArray(messages []models.Message, includeStrategy models.IncludeStrategy) []models.Message {
-	var newarray []models.Message
-	for _, msg := range messages {
-		switch includeStrategy {
-		case models.IncludeAssistant:
-			{
-				if msg.Role == models.Assistant {
-					newarray = append(newarray, msg)
-				}
-			}
-		case models.IncludeUser:
-			{
-				if msg.Role == models.User {
-					newarray = append(newarray, msg)
-				}
-			}
-		case models.IncludeBoth:
-			{
-				newarray = append(newarray, msg)
-			}
-		default:
-			{
-				newarray = append(newarray, msg)
-			}
-		}
-	}
-
-	if len(newarray) > companion.Config.MaxMessages {
-		newarray = newarray[len(newarray)-companion.Config.MaxMessages:]
-	}
-
-	return newarray
-}
-
-// createMessage creates a new message with the given role and content.
-func (companion *Companion) CreateMessage(role models.Role, input string) models.Message {
-	var message models.Message = models.Message{
-		Role:    role,
-		Content: input,
-		Images:  nil,
-	}
-
-	return message
-}
-
-// CreateMessageWithImages creates a new message with the given role, content and images
-func (companion *Companion) CreateMessageWithImages(role models.Role, input string, images *[]models.Base64Image) models.Message {
-	var message models.Message = models.Message{
-		Role:    role,
-		Content: input,
-		Images:  images,
-	}
-
-	return message
 }
 
 // addMessage adds the given message to the conversation history.
@@ -207,48 +128,9 @@ func (companion *Companion) AddMessage(message models.Message) {
 	companion.Conversation = append(companion.Conversation, message)
 }
 
-// ClearLine clears the current line if output is enabled in the configuration.
-func (companion *Companion) ClearLine() {
-	if companion.Config.Terminal.Output {
-		fmt.Print(terminal.ClearLine)
-	}
-}
-
-// Print prints the given content with the specified color and reset code if output is enabled in the configuration.
-func (companion *Companion) Print(content string) {
-	if companion.Config.Terminal.Output {
-		fmt.Printf("%s%s%s", companion.Config.Terminal.Color, content, terminal.Reset)
-	}
-}
-
-// Println prints the given content with the specified color and reset code followed by a newline character if output is enabled in the configuration.
-func (companion *Companion) Println(content string) {
-	if companion.Config.Terminal.Output {
-		fmt.Printf("%s%s%s\n", companion.Config.Terminal.Color, content, terminal.Reset)
-	}
-}
-
-// PrintError prints an error message with the specified color and reset code followed by a newline character.
-func (companion *Companion) PrintError(err error) {
-	fmt.Printf("%s%v%s\n", terminal.Red, err, terminal.Reset)
-}
-
 // SendModerationRequest sends a request to the OpenAI API to moderate a given text input.
 func (companion *Companion) SendModerationRequest(moderationRequest models.ModerationRequest) (models.ModerationResponse, error) {
 	return models.ModerationResponse{}, errors.New("unsupported")
-}
-
-func (companion *Companion) CreateEmbeddingRequest(input []string) *models.EmbeddingRequest {
-	return &models.EmbeddingRequest{
-		Model: companion.Config.AiModels.EmbeddingModel.Model,
-		Input: input,
-	}
-}
-
-func (companion *Companion) CreateModerationRequest(input string) *models.ModerationRequest {
-	return &models.ModerationRequest{
-		Input: input,
-	}
 }
 
 // SendEmbeddingRequest sends an embedding request to the server using the provided embedding request object.
@@ -258,11 +140,11 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	// Marshal the payload into JSON
 	payloadBytes, err := json.Marshal(embedding)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return embeddingResponse, err
 	}
 
-	companion.Trace(fmt.Sprintf("SendEmbeddingRequest: payload %s", string(payloadBytes)))
+	util.Trace(fmt.Sprintf("SendEmbeddingRequest: payload %s", string(payloadBytes)), companion.Config.Terminal)
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -276,7 +158,7 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	// Create and configure the HTTP request
 	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiEmbedURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return embeddingResponse, err
 	}
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
@@ -285,30 +167,30 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	// Execute the HTTP request
 	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return embeddingResponse, err
 	}
 	defer resp.Body.Close()
-	companion.Debug(fmt.Sprintf("SendEmbeddingRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status))
+	util.Debug(fmt.Sprintf("SendEmbeddingRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
 
 	if companion.Config.Terminal.Output {
 		cancel()
-		companion.ClearLine()
+		util.ClearLine(companion.Config.Terminal)
 	}
 
 	// Process the streaming response
 	responseBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return embeddingResponse, err
 	}
 
-	companion.Trace(fmt.Sprintf("SendEmbeddingRequest: responseBytes %s", string(responseBytes)))
+	util.Trace(fmt.Sprintf("SendEmbeddingRequest: responseBytes %s", string(responseBytes)), companion.Config.Terminal)
 
 	var originalResponse EmbeddingResponse
 	err = json.Unmarshal(responseBytes, &originalResponse)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return embeddingResponse, err
 	}
 
@@ -323,8 +205,8 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 
 // ProcessUserInput processes the user input by sending it to the API and handling the response.
 func (companion *Companion) SendChatRequest(message models.MessageRequest, streaming bool, callback func(m models.Message) error) (models.Message, error) {
-	companion.Trace(fmt.Sprintf("parameters:\nmessage: %v\nstreaming: %v\n", message, streaming))
-	companion.Trace(fmt.Sprintf("message.message.content: %s\n", message.Message.Content))
+	util.Trace(fmt.Sprintf("parameters:\nmessage: %v\nstreaming: %v\n", message, streaming), companion.Config.Terminal)
+	util.Trace(fmt.Sprintf("message.message.content: %s\n", message.Message.Content), companion.Config.Terminal)
 	var result models.Message
 	var payload CompletionRequest = CompletionRequest{
 		Model:    string(companion.Config.AiModels.ChatModel.Model),
@@ -335,10 +217,10 @@ func (companion *Companion) SendChatRequest(message models.MessageRequest, strea
 	// Marshal the payload into JSON
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return result, err
 	}
-	companion.Trace(fmt.Sprintf("SendChatRequest: payloadBytes: %s", string(payloadBytes)))
+	util.Trace(fmt.Sprintf("SendChatRequest: payloadBytes: %s", string(payloadBytes)), companion.Config.Terminal)
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -352,7 +234,7 @@ func (companion *Companion) SendChatRequest(message models.MessageRequest, strea
 	// Create and configure the HTTP request
 	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiChatURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return result, err
 	}
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
@@ -361,38 +243,38 @@ func (companion *Companion) SendChatRequest(message models.MessageRequest, strea
 	// Execute the HTTP request
 	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return models.Message{}, err
 	}
 	defer resp.Body.Close()
 
-	companion.Debug(fmt.Sprintf("SendChatRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status))
+	util.Debug(fmt.Sprintf("SendChatRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
 
 	if companion.Config.Terminal.Output {
 		cancel()
-		companion.ClearLine()
+		util.ClearLine(companion.Config.Terminal)
 	}
 
 	// Process the streaming response
 	if streaming {
 		result, err = companion.HandleStreamResponse(resp, models.Chat, callback)
 		if err != nil {
-			companion.PrintError(err)
+			util.Error(err)
 		}
 	} else {
 		var bodyBytes []byte
 		bodyBytes, err = io.ReadAll(resp.Body)
 		if err != nil {
-			companion.PrintError(err)
+			util.Error(err)
 			return result, nil
 		}
 
-		companion.Trace(fmt.Sprintf("SendChatRequest: bodyBytes: %s", string(bodyBytes)))
+		util.Trace(fmt.Sprintf("SendChatRequest: bodyBytes: %s", string(bodyBytes)), companion.Config.Terminal)
 
 		var completionResponse CompletionResponse
 		err = json.Unmarshal(bodyBytes, &completionResponse)
 		if err != nil {
-			companion.PrintError(err)
+			util.Error(err)
 			return result, nil
 		}
 
@@ -423,11 +305,11 @@ func (companion *Companion) SendGenerateRequest(message models.MessageRequest, s
 	// Marshal the payload into JSON
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return result, err
 	}
 
-	companion.Trace(fmt.Sprintf("SendGenerateRequest: payloadBytes: %s", string(payloadBytes)))
+	util.Trace(fmt.Sprintf("SendGenerateRequest: payloadBytes: %s", string(payloadBytes)), companion.Config.Terminal)
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -441,7 +323,7 @@ func (companion *Companion) SendGenerateRequest(message models.MessageRequest, s
 	// Create and configure the HTTP request
 	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiGenerateURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return result, err
 	}
 	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
@@ -450,43 +332,43 @@ func (companion *Companion) SendGenerateRequest(message models.MessageRequest, s
 	// Execute the HTTP request
 	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return models.Message{}, err
 	}
 	defer resp.Body.Close()
 
-	companion.Debug(fmt.Sprintf("SendGenerateRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status))
+	util.Debug(fmt.Sprintf("SendGenerateRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
 
 	if companion.Config.Terminal.Output {
 		cancel()
-		companion.ClearLine()
+		util.ClearLine(companion.Config.Terminal)
 	}
 
 	// Process the streaming response
 	if streaming {
 		result, err = companion.HandleStreamResponse(resp, models.Generate, callback)
 		if err != nil {
-			companion.PrintError(err)
+			util.Error(err)
 			return result, err
 		}
 	} else {
 		var bodyBytes []byte
 		bodyBytes, err = io.ReadAll(resp.Body)
 		if err != nil {
-			companion.PrintError(err)
+			util.Error(err)
 			return result, err
 		}
 
-		companion.Trace(fmt.Sprintf("SendGenerateRequest: payloadBytes: %s", string(payloadBytes)))
+		util.Trace(fmt.Sprintf("SendGenerateRequest: payloadBytes: %s", string(payloadBytes)), companion.Config.Terminal)
 
 		var completionResponse CompletionResponse
 		err = json.Unmarshal(bodyBytes, &completionResponse)
 		if err != nil {
-			companion.PrintError(err)
+			util.Error(err)
 			return result, err
 		}
 
-		result = companion.CreateAssistantMessage(completionResponse.Response)
+		result = util.CreateAssistantMessage(completionResponse.Response)
 	}
 
 	return result, nil
@@ -497,37 +379,37 @@ func (companion *Companion) HandleStreamResponse(resp *http.Response, streamType
 	var message strings.Builder
 	var result models.Message
 
-	companion.Debug(fmt.Sprintf("HandleStreamResponse: resp.StatusCode: %d, status: %s", resp.StatusCode, resp.Status))
+	util.Debug(fmt.Sprintf("HandleStreamResponse: resp.StatusCode: %d, status: %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
 			err := fmt.Errorf("unexpected HTTP status: %s, and failed to read body: %v", resp.Status, readErr)
-			companion.PrintError(err)
+			util.Error(err)
 			resp.Body.Close()
 			return models.Message{}, err
 		}
 		err := fmt.Errorf("unexpected HTTP status: %s, body: %s", resp.Status, string(bodyBytes))
-		companion.PrintError(err)
+		util.Error(err)
 		resp.Body.Close()
 		return models.Message{}, err
 	}
 	defer resp.Body.Close()
 
-	companion.Print("> ")
+	util.Print("> ", companion.Config.Terminal)
 
 	scanner := bufio.NewScanner(resp.Body)
 
 OuterLoop:
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		companion.Trace(fmt.Sprintf("HandleStreamResponse: line: %s", line))
+		util.Trace(fmt.Sprintf("HandleStreamResponse: line: %s", line), companion.Config.Terminal)
 		if len(line) == 0 {
 			continue
 		}
 
 		var responseObject CompletionResponse
 		if err := json.Unmarshal([]byte(line), &responseObject); err != nil {
-			companion.PrintError(err)
+			util.Error(err)
 			return models.Message{}, err // Fail fast on unmarshaling error
 		}
 
@@ -537,37 +419,37 @@ OuterLoop:
 			message.WriteString(responseObject.Message.Content)
 			if callback != nil {
 				if err := callback(responseObject.Message); err != nil {
-					companion.PrintError(err)
+					util.Error(err)
 					return models.Message{}, err
 				}
 			}
-			companion.Print(responseObject.Message.Content)
+			util.Print(responseObject.Message.Content, companion.Config.Terminal)
 		case models.Generate:
 			// Print the content from each choice in the chunk
 			message.WriteString(responseObject.Response)
 			if callback != nil {
-				msg := companion.CreateAssistantMessage(responseObject.Response)
+				msg := util.CreateAssistantMessage(responseObject.Response)
 				if err := callback(msg); err != nil {
-					companion.PrintError(err)
+					util.Error(err)
 					return models.Message{}, err
 				}
 			}
-			companion.Print(responseObject.Response)
+			util.Print(responseObject.Response, companion.Config.Terminal)
 		default:
 			err := fmt.Errorf("unsupported stream type: %v", streamType)
-			companion.PrintError(err)
+			util.Error(err)
 			return models.Message{}, err
 		}
 
 		if responseObject.Done {
-			result = companion.CreateAssistantMessage(message.String())
-			companion.Println("")
+			result = util.CreateAssistantMessage(message.String())
+			util.Println("", companion.Config.Terminal)
 			break OuterLoop
 		}
 	}
 
 	if err := scanner.Err(); err != nil && err != io.EOF {
-		companion.PrintError(err)
+		util.Error(err)
 		return models.Message{}, err
 	}
 
@@ -579,7 +461,7 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 	// Create and configure the HTTP request
 	req, err := http.NewRequest(http.MethodGet, companion.Config.ApiEndpoints.ApiModelsURL, nil)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return []models.Model{}, err
 	}
 
@@ -589,30 +471,30 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 	// Execute the HTTP request
 	resp, err := companion.HttpClient.Do(req)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return []models.Model{}, err
 	}
 	defer resp.Body.Close()
 
-	companion.Debug(fmt.Sprintf("GetModels: StatusCode %d, Status %s", resp.StatusCode, resp.Status))
+	util.Debug(fmt.Sprintf("GetModels: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
 
 	if companion.Config.Terminal.Output {
-		companion.ClearLine()
+		util.ClearLine(companion.Config.Terminal)
 	}
 
 	// Process the streaming response
 	responseBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return []models.Model{}, err
 	}
 
-	companion.Trace(fmt.Sprintf("GetModels: responseBytes: %s", responseBytes))
+	util.Trace(fmt.Sprintf("GetModels: responseBytes: %s", responseBytes), companion.Config.Terminal)
 
 	var originalResponse ModelResponse
 	err = json.Unmarshal(responseBytes, &originalResponse)
 	if err != nil {
-		companion.PrintError(err)
+		util.Error(err)
 		return []models.Model{}, err
 	}
 
@@ -621,47 +503,5 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 
 // RunFunction executes a function with the provided payload.
 func (companion *Companion) RunFunction(function models.Function, payload models.FunctionPayload) (models.FunctionResponse, error) {
-	result := models.FunctionResponse{}
-
-	payloadBytes, err := json.Marshal(payload.Parameters)
-	if err != nil {
-		companion.PrintError(err)
-		return result, err
-	}
-
-	// Create and configure the HTTP request
-	req, err := http.NewRequestWithContext(context.Background(), "POST", function.Endpoint, bytes.NewBuffer(payloadBytes))
-	if err != nil {
-		companion.PrintError(err)
-		return result, err
-	}
-	req.Header.Set("Authorization", "Bearer "+function.ApiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	companion.Trace(fmt.Sprintf("RunFunction: payload %s", string(payloadBytes)))
-
-	// Execute the HTTP request
-	resp, err := companion.HttpClient.Do(req)
-	if err != nil {
-		companion.PrintError(err)
-		return result, err
-	}
-	defer resp.Body.Close()
-
-	companion.Debug(fmt.Sprintf("RunFunction: StatusCode %d, Status %s", resp.StatusCode, resp.Status))
-
-	responseBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		companion.PrintError(err)
-		return result, err
-	}
-
-	companion.Trace(fmt.Sprintf("RunFunction: responseBytes %s", string(responseBytes)))
-
-	err = json.Unmarshal(responseBytes, &result)
-	if err != nil {
-		companion.PrintError(err)
-		return result, err
-	}
-	return result, nil
+	return util.RunFunction(companion.HttpClient, function, payload, companion.Config.Terminal.Debug, companion.Config.Terminal.Trace)
 }
