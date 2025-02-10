@@ -1,12 +1,17 @@
 package aicompanion_test
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/ghmer/aicompanion"
 	"github.com/ghmer/aicompanion/models"
 	"github.com/ghmer/aicompanion/terminal"
 	"github.com/ghmer/aicompanion/vectordb"
@@ -276,6 +281,14 @@ func (companion *MockAICompanion) HandleStreamResponse(resp *http.Response, stre
 	return result, nil
 }
 
+func (companion *MockAICompanion) CreateEmbeddingRequest(input []string) *models.EmbeddingRequest {
+	return &models.EmbeddingRequest{}
+}
+
+func (companion *MockAICompanion) CreateModerationRequest(input string) *models.ModerationRequest {
+	return &models.ModerationRequest{}
+}
+
 // GetModels returns a list of available models from the API.
 func (companion *MockAICompanion) GetModels() ([]models.Model, error) {
 	var result []models.Model = []models.Model{
@@ -288,28 +301,143 @@ func (companion *MockAICompanion) GetModels() ([]models.Model, error) {
 	return result, nil
 }
 
-func (companion *MockAICompanion) RunFunction(models.Function) (models.FunctionResponse, error) {
-	return models.FunctionResponse{}, errors.New("not implemented")
+// RunFunction executes a function with the provided payload.
+func (companion *MockAICompanion) RunFunction(function models.Function, payload models.FunctionPayload) (models.FunctionResponse, error) {
+	result := models.FunctionResponse{}
+
+	payloadBytes, err := json.Marshal(payload.Parameters)
+	if err != nil {
+		companion.PrintError(err)
+		return result, err
+	}
+
+	// Create and configure the HTTP request
+	req, err := http.NewRequestWithContext(context.Background(), "POST", function.Endpoint, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		companion.PrintError(err)
+		return result, err
+	}
+	req.Header.Set("Authorization", "Bearer "+function.ApiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	companion.Trace(fmt.Sprintf("RunFunction: payload %s", string(payloadBytes)))
+
+	// Execute the HTTP request
+	resp, err := companion.HttpClient.Do(req)
+	if err != nil {
+		companion.PrintError(err)
+		return result, err
+	}
+	defer resp.Body.Close()
+
+	companion.Debug(fmt.Sprintf("RunFunction: StatusCode %d, Status %s", resp.StatusCode, resp.Status))
+
+	responseBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		companion.PrintError(err)
+		return result, err
+	}
+
+	companion.Trace(fmt.Sprintf("RunFunction: responseBytes %s", string(responseBytes)))
+
+	err = json.Unmarshal(responseBytes, &result)
+	if err != nil {
+		companion.PrintError(err)
+		return result, err
+	}
+	return result, nil
+}
+
+func (companion *MockAICompanion) Debug(payload string) {
+	fmt.Println(payload)
+}
+
+func (companion *MockAICompanion) Trace(payload string) {
+	fmt.Println(payload)
+}
+
+// define a struct for the JSON payload
+type Payload struct {
+	Email  string `json:"email"`
+	UserID string `json:"user_id"`
 }
 
 func TestAICompanion(t *testing.T) {
-	companion := &MockAICompanion{}
+	var companion aicompanion.AICompanion = &MockAICompanion{}
 
 	t.Run("Test UnMarshalFunctionPayload", func(t *testing.T) {
 		var payload string = `{
-			"function_name":"getFavouriteFood", 
+			"function_name":"getFavouriteFood",
 			"parameters":{
-				"user_id":"mario",
-				"email":"mario@nachbars-netz.link"
+				"user_id":"test",
+				"email":"test@test.local"
 			}
 		}`
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost {
+				t.Errorf("Expected 'POST', got '%s'", r.Method)
+			}
+
+			if r.Header.Get("Authorization") != "Bearer 12345" {
+				t.Errorf("Expected Authorization header 'Bearer 12345', got '%s'", r.Header.Get("Authorization"))
+			}
+
+			if r.Header.Get("Content-Type") != "application/json" {
+				t.Errorf("Expected content type 'application/json', got '%s'", r.Header.Get("Content-Type"))
+			}
+
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				t.Fatalf("Couldn't read request body: %s", err)
+			}
+
+			var receivedPayload Payload
+			err = json.Unmarshal(body, &receivedPayload)
+			if err != nil {
+				t.Fatalf("Error unmarshaling request body: %s", err)
+			}
+
+			expectedPayload := Payload{"test@test.local", "test"}
+			if receivedPayload != expectedPayload {
+				t.Errorf("Expected payload %+v, got %+v", expectedPayload, receivedPayload)
+			}
+
+			var response models.FunctionResponse = models.FunctionResponse{
+				Status:  "OK",
+				Message: "lasagne",
+			}
+
+			responsebytes, _ := json.Marshal(&response)
+
+			w.Write(responsebytes)
+		}))
+		defer mockServer.Close()
+		companion.SetHttpClient(mockServer.Client())
+
 		var payloadObj models.FunctionPayload
 		err := json.Unmarshal([]byte(payload), &payloadObj)
 		if err != nil {
 			t.Errorf("UnMarshalFunctionPayload failed, got %v", err)
 		}
 
-		t.Logf("got payload %v", payloadObj)
+		var function models.Function = models.Function{
+			Id:       "1",
+			Endpoint: mockServer.URL,
+			ApiKey:   "12345",
+		}
+		response, err := companion.RunFunction(function, payloadObj)
+		if err != nil {
+			t.Errorf("UnMarshalFunctionPayload failed, got %v", err)
+		}
+
+		if response.Status != "OK" {
+			t.Errorf("expected status 'OK', got %s", response.Status)
+		}
+
+		if response.Message != "lasagne" {
+			t.Errorf("expected message 'lasagne', got %s", response.Message)
+		}
+		t.Logf("response: %v", response)
 	})
 
 	t.Run("Test PrepareConversation", func(t *testing.T) {
@@ -359,8 +487,8 @@ func TestAICompanion(t *testing.T) {
 	t.Run("Test AddMessage", func(t *testing.T) {
 		msg := models.Message{Role: models.User, Content: "New message"}
 		companion.AddMessage(msg)
-		if len(companion.Conversation) != 1 || companion.Conversation[0].Content != "New message" {
-			t.Errorf("AddMessage failed, got %v", companion.Conversation)
+		if len(companion.GetConversation()) != 1 || companion.GetConversation()[0].Content != "New message" {
+			t.Errorf("AddMessage failed, got %v", companion.GetConversation())
 		}
 	})
 
@@ -397,7 +525,7 @@ func TestAICompanion(t *testing.T) {
 	})
 
 	t.Run("Test RunFunctions", func(t *testing.T) {
-		_, err := companion.RunFunction(models.Function{})
+		_, err := companion.RunFunction(models.Function{}, models.FunctionPayload{})
 		if err.Error() != "not implemented" {
 			t.Errorf("RunFunction failed, expected error %v, got %v", "not implemented", err)
 		}

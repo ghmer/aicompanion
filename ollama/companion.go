@@ -635,7 +635,7 @@ func (companion *Companion) RunFunction(function models.Function, payload models
 		companion.PrintError(err)
 		return result, err
 	}
-	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
+	req.Header.Set("Authorization", "Bearer "+function.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	companion.Trace(fmt.Sprintf("RunFunction: payload %s", string(payloadBytes)))
