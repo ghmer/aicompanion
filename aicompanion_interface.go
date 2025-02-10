@@ -10,7 +10,6 @@ import (
 	"github.com/ghmer/aicompanion/openai"
 	"github.com/ghmer/aicompanion/terminal"
 	"github.com/ghmer/aicompanion/utility"
-	"github.com/ghmer/aicompanion/vectordb"
 )
 
 const (
@@ -89,11 +88,13 @@ type AICompanion interface {
 	// SetClient sets a new HTTP client for requests
 	SetHttpClient(client *http.Client)
 
-	// SetVectorDB sets the vector database instance.
-	SetVectorDB(vectorDb *vectordb.VectorDb)
+	/*
+		// SetVectorDB sets the vector database instance.
+		SetVectorDB(vectorDb *vectordb.VectorDb)
 
-	// GetVectorDb returns the current vector database instance.
-	GetVectorDB() *vectordb.VectorDb
+		// GetVectorDb returns the current vector database instance.
+		GetVectorDB() *vectordb.VectorDb
+	*/
 
 	// interactions
 	// GetModels returns all models that the endpoint supports
@@ -119,7 +120,7 @@ type AICompanion interface {
 }
 
 // NewCompanion creates a new Companion instance with the provided configuration.
-func NewCompanion(config models.Configuration, vectordb *vectordb.VectorDb) AICompanion {
+func NewCompanion(config models.Configuration) AICompanion {
 	var client AICompanion
 	switch config.ApiProvider {
 	case models.Ollama:
@@ -142,10 +143,6 @@ func NewCompanion(config models.Configuration, vectordb *vectordb.VectorDb) AICo
 			Conversation: make([]models.Message, 0),
 			HttpClient:   &http.Client{Timeout: time.Second * time.Duration(config.HttpConfig.HTTPClientTimeout)},
 		}
-	}
-
-	if vectordb != nil {
-		client.SetVectorDB(vectordb)
 	}
 
 	return client

@@ -14,7 +14,6 @@ import (
 	"github.com/ghmer/aicompanion/models"
 	"github.com/ghmer/aicompanion/terminal"
 	"github.com/ghmer/aicompanion/utility"
-	"github.com/ghmer/aicompanion/vectordb"
 )
 
 var util utility.AICompanionUtility = utility.NewCompanionUtility()
@@ -25,7 +24,6 @@ type Companion struct {
 	SystemRole   models.Message
 	Conversation []models.Message
 	HttpClient   *http.Client
-	VectorDb     *vectordb.VectorDb
 }
 
 // GetConfig returns the current configuration of the companion.
@@ -67,16 +65,6 @@ func (companion *Companion) SetSummarizationPrompt(summarizationprompt string) {
 // GetSummarizationPrompt returns the current summarization prompt of the companion.
 func (companion *Companion) GetSummarizationPrompt() string {
 	return companion.Config.Prompt.SummarizationPrompt
-}
-
-// SetVectorDBClient sets a new vector database client for the companion.
-func (companion *Companion) SetVectorDB(vectorDb *vectordb.VectorDb) {
-	companion.VectorDb = vectorDb
-}
-
-// GetVectorDBClient returns the current vector database client of the companion.
-func (companion *Companion) GetVectorDB() *vectordb.VectorDb {
-	return companion.VectorDb
 }
 
 // GetCurrentSystemRole returns the current system role of the companion.

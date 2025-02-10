@@ -13,7 +13,6 @@ import (
 	"github.com/ghmer/aicompanion/models"
 	"github.com/ghmer/aicompanion/terminal"
 	"github.com/ghmer/aicompanion/utility"
-	"github.com/ghmer/aicompanion/vectordb"
 )
 
 var util utility.AICompanionUtility = utility.NewCompanionUtility()
@@ -24,7 +23,6 @@ type Companion struct {
 	SystemRole   models.Message
 	Conversation []models.Message
 	HttpClient   *http.Client
-	VectorDb     *vectordb.VectorDb
 }
 
 // SetEnrichmentPrompt sets a new enrichment prompt for the companion.
@@ -71,14 +69,6 @@ func (companion *Companion) SetConfig(config models.Configuration) {
 // GetCurrentSystemRole returns the current system role of the companion.
 func (companion *Companion) GetSystemRole() models.Message {
 	return companion.SystemRole
-}
-
-func (companion *Companion) SetVectorDB(vectorDbClient *vectordb.VectorDb) {
-	companion.VectorDb = vectorDbClient
-}
-
-func (companion *Companion) GetVectorDB() *vectordb.VectorDb {
-	return companion.VectorDb
 }
 
 // SetCurrentSystemRole sets a new system role for the companion.
