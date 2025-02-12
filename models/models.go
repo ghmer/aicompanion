@@ -69,9 +69,10 @@ type Terminal struct {
 }
 
 type Persona struct {
-	Name      string   `json:"name"`
-	Prompt    Prompt   `json:"prompt"`
-	Knowledge []string `json:"knowledge"`
+	Name         string   `json:"name"`
+	Prompt       Prompt   `json:"prompt"`
+	Knowledge    []string `json:"knowledge"`
+	UseKnowledge bool     `json:"use_knowledge"`
 }
 
 func (persona *Persona) AddKnowledge(knowledge string) {
