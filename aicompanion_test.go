@@ -41,37 +41,37 @@ func (companion *MockAICompanion) GetConfig() models.Configuration {
 // SetConfig sets a new configuration for the companion.
 func (companion *MockAICompanion) SetConfig(config models.Configuration) {
 	companion.Config = config
-	companion.SetSystemRole(config.Prompt.SystemPrompt)
+	companion.SetSystemRole(config.ActivePersona.Prompt.SystemPrompt)
 }
 
 // SetEnrichmentPrompt sets a new enrichment prompt for the companion.
 func (companion *MockAICompanion) SetEnrichmentPrompt(enrichmentprompt string) {
-	companion.Config.Prompt.EnrichmentPrompt = enrichmentprompt
+	companion.Config.ActivePersona.Prompt.EnrichmentPrompt = enrichmentprompt
 }
 
 // GetEnrichmentPrompt returns the current enrichment prompt of the companion.
 func (companion *MockAICompanion) GetEnrichmentPrompt() string {
-	return companion.Config.Prompt.EnrichmentPrompt
+	return companion.Config.ActivePersona.Prompt.EnrichmentPrompt
 }
 
 // SetFunctionsPrompt sets a new functions prompt for the companion.
 func (companion *MockAICompanion) SetFunctionsPrompt(functionsprompt string) {
-	companion.Config.Prompt.FunctionsPrompt = functionsprompt
+	companion.Config.ActivePersona.Prompt.FunctionsPrompt = functionsprompt
 }
 
 // GetFunctionsPrompt returns the current functions prompt of the companion.
 func (companion *MockAICompanion) GetFunctionsPrompt() string {
-	return companion.Config.Prompt.FunctionsPrompt
+	return companion.Config.ActivePersona.Prompt.FunctionsPrompt
 }
 
 // SetSummarizationPrompt sets a new summarization prompt for the companion.
 func (companion *MockAICompanion) SetSummarizationPrompt(summarizationprompt string) {
-	companion.Config.Prompt.SummarizationPrompt = summarizationprompt
+	companion.Config.ActivePersona.Prompt.SummarizationPrompt = summarizationprompt
 }
 
 // GetSummarizationPrompt returns the current summarization prompt of the companion.
 func (companion *MockAICompanion) GetSummarizationPrompt() string {
-	return companion.Config.Prompt.SummarizationPrompt
+	return companion.Config.ActivePersona.Prompt.SummarizationPrompt
 }
 
 // CreateUserMessage creates a new user message with the given input string
@@ -104,7 +104,7 @@ func (companion *MockAICompanion) GetSystemRole() models.Message {
 
 // SetCurrentSystemRole sets a new system role for the companion.
 func (companion *MockAICompanion) SetSystemRole(prompt string) {
-	companion.Config.Prompt.SystemPrompt = prompt
+	companion.Config.ActivePersona.Prompt.SystemPrompt = prompt
 
 	var role models.Message = models.Message{
 		Role:    models.System,

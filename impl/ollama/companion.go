@@ -34,37 +34,37 @@ func (companion *Companion) GetConfig() models.Configuration {
 // SetConfig sets a new configuration for the companion.
 func (companion *Companion) SetConfig(config models.Configuration) {
 	companion.Config = config
-	companion.SetSystemRole(config.Prompt.SystemPrompt)
+	companion.SetSystemRole(config.ActivePersona.Prompt.SystemPrompt)
 }
 
 // SetEnrichmentPrompt sets a new enrichment prompt for the companion.
 func (companion *Companion) SetEnrichmentPrompt(enrichmentprompt string) {
-	companion.Config.Prompt.EnrichmentPrompt = enrichmentprompt
+	companion.Config.ActivePersona.Prompt.EnrichmentPrompt = enrichmentprompt
 }
 
 // GetEnrichmentPrompt returns the current enrichment prompt of the companion.
 func (companion *Companion) GetEnrichmentPrompt() string {
-	return companion.Config.Prompt.EnrichmentPrompt
+	return companion.Config.ActivePersona.Prompt.EnrichmentPrompt
 }
 
 // SetFunctionsPrompt sets a new functions prompt for the companion.
 func (companion *Companion) SetFunctionsPrompt(functionsprompt string) {
-	companion.Config.Prompt.FunctionsPrompt = functionsprompt
+	companion.Config.ActivePersona.Prompt.FunctionsPrompt = functionsprompt
 }
 
 // GetFunctionsPrompt returns the current functions prompt of the companion.
 func (companion *Companion) GetFunctionsPrompt() string {
-	return companion.Config.Prompt.FunctionsPrompt
+	return companion.Config.ActivePersona.Prompt.FunctionsPrompt
 }
 
 // SetSummarizationPrompt sets a new summarization prompt for the companion.
 func (companion *Companion) SetSummarizationPrompt(summarizationprompt string) {
-	companion.Config.Prompt.SummarizationPrompt = summarizationprompt
+	companion.Config.ActivePersona.Prompt.SummarizationPrompt = summarizationprompt
 }
 
 // GetSummarizationPrompt returns the current summarization prompt of the companion.
 func (companion *Companion) GetSummarizationPrompt() string {
-	return companion.Config.Prompt.SummarizationPrompt
+	return companion.Config.ActivePersona.Prompt.SummarizationPrompt
 }
 
 // GetCurrentSystemRole returns the current system role of the companion.
@@ -74,7 +74,7 @@ func (companion *Companion) GetSystemRole() models.Message {
 
 // SetCurrentSystemRole sets a new system role for the companion.
 func (companion *Companion) SetSystemRole(prompt string) {
-	companion.Config.Prompt.SystemPrompt = prompt
+	companion.Config.ActivePersona.Prompt.SystemPrompt = prompt
 
 	var role models.Message = models.Message{
 		Role:    models.System,

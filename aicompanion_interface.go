@@ -128,7 +128,7 @@ func NewCompanion(config models.Configuration) AICompanion {
 			Config: config,
 			SystemRole: models.Message{
 				Role:    models.System,
-				Content: config.Prompt.SystemPrompt,
+				Content: config.ActivePersona.Prompt.SystemPrompt,
 			},
 			Conversation: make([]models.Message, 0),
 			HttpClient:   &http.Client{Timeout: time.Second * time.Duration(config.HttpConfig.HTTPClientTimeout)},
@@ -138,7 +138,7 @@ func NewCompanion(config models.Configuration) AICompanion {
 			Config: config,
 			SystemRole: models.Message{
 				Role:    models.System,
-				Content: config.Prompt.SystemPrompt,
+				Content: config.ActivePersona.Prompt.SystemPrompt,
 			},
 			Conversation: make([]models.Message, 0),
 			HttpClient:   &http.Client{Timeout: time.Second * time.Duration(config.HttpConfig.HTTPClientTimeout)},
@@ -171,10 +171,18 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, gener
 		},
 	}
 
-	config.Prompt.SystemPrompt = SystemPrompt
-	config.Prompt.EnrichmentPrompt = EnrichmentPrompt
-	config.Prompt.SummarizationPrompt = SummarizationPrompt
-	config.Prompt.FunctionsPrompt = FunctionsPrompt
+	persona := models.Persona{
+		Name: "default",
+		Prompt: models.Prompt{
+			SystemPrompt:        SystemPrompt,
+			EnrichmentPrompt:    EnrichmentPrompt,
+			SummarizationPrompt: SummarizationPrompt,
+			FunctionsPrompt:     FunctionsPrompt,
+		},
+	}
+
+	config.ActivePersona = persona
+	config.Personas = []models.Persona{persona}
 
 	var apiEndpoints models.ApiEndpointUrls
 	switch apiProvider {

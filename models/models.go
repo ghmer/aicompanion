@@ -36,7 +36,8 @@ type Configuration struct {
 	MaxMessages     int               `json:"max_messages"` // Maximum number of messages in a conversation
 	IncludeStrategy IncludeStrategy   `json:"include_strategy"`
 	Terminal        Terminal          `json:"terminal"`
-	Prompt          Prompt            `json:"prompts"`
+	ActivePersona   Persona           `json:"active_persona"`
+	Personas        []Persona         `jaon:"personas"`
 }
 
 type Conversation struct {
@@ -65,6 +66,11 @@ type Terminal struct {
 	Debug     bool   `json:"debug"`
 	Trace     bool   `json:"trace"`
 	Color     terminal.TermColor
+}
+
+type Persona struct {
+	Name   string `json:"name"`
+	Prompt Prompt `json:"prompt"`
 }
 
 type Prompt struct {
