@@ -87,6 +87,7 @@ type Persona struct {
 	Prompt       Prompt   `json:"prompt"`
 	Knowledge    []string `json:"knowledge"`
 	UseKnowledge bool     `json:"use_knowledge"`
+	UseFunctions bool     `json:"use_functions"`
 }
 
 func (persona *Persona) AddKnowledge(knowledge string) {
