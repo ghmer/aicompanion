@@ -40,6 +40,20 @@ type Configuration struct {
 	Personas        []Persona         `json:"personas"`
 }
 
+func (config *Configuration) GetPersona(persona string) Persona {
+	if persona == config.ActivePersona.Name {
+		return config.ActivePersona
+	}
+
+	for _, personaObj := range config.Personas {
+		if personaObj.Name == persona {
+			return personaObj
+		}
+	}
+
+	return config.ActivePersona
+}
+
 type Conversation struct {
 	Id           string    `json:"id"`
 	Summary      string    `json:"summary"`
