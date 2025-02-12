@@ -37,7 +37,7 @@ type Configuration struct {
 	IncludeStrategy IncludeStrategy   `json:"include_strategy"`
 	Terminal        Terminal          `json:"terminal"`
 	ActivePersona   Persona           `json:"active_persona"`
-	Personas        []Persona         `jaon:"personas"`
+	Personas        []Persona         `json:"personas"`
 }
 
 type Conversation struct {
