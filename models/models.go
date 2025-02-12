@@ -69,8 +69,22 @@ type Terminal struct {
 }
 
 type Persona struct {
-	Name   string `json:"name"`
-	Prompt Prompt `json:"prompt"`
+	Name      string   `json:"name"`
+	Prompt    Prompt   `json:"prompt"`
+	Knowledge []string `json:"knowledge"`
+}
+
+func (persona *Persona) AddKnowledge(knowledge string) {
+	persona.Knowledge = append(persona.Knowledge, knowledge)
+}
+
+func (persona *Persona) RemoveKnowledge(knowledge string) {
+	for i, k := range persona.Knowledge {
+		if k == knowledge {
+			persona.Knowledge = append(persona.Knowledge[:i], persona.Knowledge[i+1:]...)
+			break
+		}
+	}
 }
 
 type Prompt struct {

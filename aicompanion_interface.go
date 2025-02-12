@@ -179,6 +179,7 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, gener
 			SummarizationPrompt: SummarizationPrompt,
 			FunctionsPrompt:     FunctionsPrompt,
 		},
+		Knowledge: []string{},
 	}
 
 	config.ActivePersona = persona
