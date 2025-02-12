@@ -102,7 +102,6 @@ func (companion *Companion) SetHttpClient(client *http.Client) {
 
 // prepareConversation prepares the conversation by appending system role and current conversation messages.
 func (companion *Companion) PrepareConversation(message models.Message, includeStrategy models.IncludeStrategy) []models.Message {
-	companion.SetSystemRole(companion.GetConfig().ActivePersona.Prompt.SystemPrompt)
 	messages := append([]models.Message{companion.GetSystemRole()}, sideKick.PrepareArray(companion.Conversation, includeStrategy, companion.Config.MaxMessages)...)
 	messages = append(messages, message)
 
