@@ -160,6 +160,11 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	}
 	defer resp.Body.Close()
 	sideKick.Debug(fmt.Sprintf("SendEmbeddingRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
+	err = sideKick.VerifyStatus(resp)
+	if err != nil {
+		sideKick.Error(err)
+		return embeddingResponse, err
+	}
 
 	if companion.Config.Terminal.Output {
 		cancel()
@@ -237,6 +242,11 @@ func (companion *Companion) SendChatRequest(message models.MessageRequest, strea
 	defer resp.Body.Close()
 
 	sideKick.Debug(fmt.Sprintf("SendChatRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
+	err = sideKick.VerifyStatus(resp)
+	if err != nil {
+		sideKick.Error(err)
+		return models.Message{}, err
+	}
 
 	if companion.Config.Terminal.Output {
 		cancel()
@@ -326,6 +336,11 @@ func (companion *Companion) SendGenerateRequest(message models.MessageRequest, s
 	defer resp.Body.Close()
 
 	sideKick.Debug(fmt.Sprintf("SendGenerateRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
+	err = sideKick.VerifyStatus(resp)
+	if err != nil {
+		sideKick.Error(err)
+		return models.Message{}, err
+	}
 
 	if companion.Config.Terminal.Output {
 		cancel()
@@ -465,7 +480,11 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 	defer resp.Body.Close()
 
 	sideKick.Debug(fmt.Sprintf("GetModels: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
-
+	err = sideKick.VerifyStatus(resp)
+	if err != nil {
+		sideKick.Error(err)
+		return []models.Model{}, err
+	}
 	if companion.Config.Terminal.Output {
 		sideKick.ClearLine(companion.Config.Terminal)
 	}

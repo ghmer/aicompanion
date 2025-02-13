@@ -151,6 +151,11 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	}
 	defer resp.Body.Close()
 	sideKick.Debug(fmt.Sprintf("SendEmbeddingRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
+	err = sideKick.VerifyStatus(resp)
+	if err != nil {
+		sideKick.Error(err)
+		return embeddingResponse, err
+	}
 
 	if companion.Config.Terminal.Output {
 		cancel()
@@ -231,6 +236,11 @@ func (companion *Companion) SendModerationRequest(moderationRequest models.Moder
 	}
 	defer resp.Body.Close()
 	sideKick.Debug(fmt.Sprintf("SendModerationRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
+	err = sideKick.VerifyStatus(resp)
+	if err != nil {
+		sideKick.Error(err)
+		return moderationResponse, err
+	}
 
 	if companion.Config.Terminal.Output {
 		cancel()
@@ -326,6 +336,11 @@ func (companion *Companion) sendCompletionRequest(message models.MessageRequest,
 	defer resp.Body.Close()
 
 	sideKick.Debug(fmt.Sprintf("sendCompletionRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
+	err = sideKick.VerifyStatus(resp)
+	if err != nil {
+		sideKick.Error(err)
+		return models.Message{}, err
+	}
 
 	if companion.Config.Terminal.Output {
 		cancel()
@@ -486,6 +501,11 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 		return []models.Model{}, err
 	}
 	sideKick.Trace(fmt.Sprintf("GetModels: responseBytes: %s", responseBytes), companion.Config.Terminal)
+	err = sideKick.VerifyStatus(resp)
+	if err != nil {
+		sideKick.Error(err)
+		return []models.Model{}, err
+	}
 
 	var originalResponse ModelResponse
 	err = json.Unmarshal(responseBytes, &originalResponse)

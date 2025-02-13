@@ -304,3 +304,11 @@ func (utility *SideKick) PrepareArray(messages []models.Message, includeStrategy
 
 	return newarray
 }
+
+func (utility *SideKick) VerifyStatus(resp *http.Response) error {
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("unexpected status code: %d, status: %s", resp.StatusCode, resp.Status)
+	}
+
+	return nil
+}

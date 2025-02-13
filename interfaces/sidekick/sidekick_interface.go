@@ -68,6 +68,9 @@ type SideKickInterface interface {
 
 	// PrepareArray filters and limits messages based on the includeStrategy.
 	PrepareArray(messages []models.Message, includeStrategy models.IncludeStrategy, maxMessages int) []models.Message
+
+	// VerifyStatus verifies if the HTTP response status code is within the expected range.
+	VerifyStatus(resp *http.Response) error
 }
 
 func NewSideKick() SideKickInterface {
