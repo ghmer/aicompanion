@@ -337,16 +337,10 @@ const (
 )
 
 type Function struct {
-	Id         string             `json:"function_id"`
-	Endpoint   string             `json:"function_endpoint"`
-	ApiKey     string             `json:"function_apikey"`
-	Definition FunctionDefinition `json:"function_definition"` // The function definition.
-}
-
-type FunctionDefinition struct {
-	FunctionName string            `json:"function_name"` // The name of the function.
-	Description  string            `json:"description"`
-	Parameters   FunctionParameter `json:"parameters"`
+	Id         string          `json:"function_id"`
+	Endpoint   string          `json:"function_endpoint"`
+	ApiKey     string          `json:"function_apikey"`
+	Definition FunctionWrapper `json:"function_definition"` // The function definition.
 }
 
 type FunctionType string
@@ -355,23 +349,34 @@ const (
 	TypeFunction FunctionType = "function"
 )
 
-type FunctionParameter struct {
-	Type       FunctionType         `json:"type"`
-	Properties map[string]Parameter `json:"properties"` // The properties of the parameter.
-	Required   []string             `json:"required,omitempty"`
+type FunctionWrapper struct {
+	Type     FunctionType       `json:"type"`
+	Function FunctionDefinition `json:"function"`
+}
+
+type FunctionDefinition struct {
+	FunctionName string            `json:"name"` // The name of the function.
+	Description  string            `json:"description"`
+	Parameters   FunctionParameter `json:"parameters"`
 }
 
 type ParameterType string
 
 const (
-	Object ParameterType = "object"
+	ObjectType ParameterType = "object"
 )
+
+type FunctionParameter struct {
+	Type       ParameterType        `json:"type"`
+	Properties map[string]Parameter `json:"properties"` // The properties of the parameter.
+	Required   []string             `json:"required,omitempty"`
+}
 
 // Parameter represents the details of a single parameter.
 type Parameter struct {
-	Type        ParameterType `json:"type"` // Type of the parameter.
-	Description string        `json:"description"`
-	Enum        []string      `json:"enum,omitempty"` // Optional list of valid values for the parameter.
+	Type        string   `json:"type"` // Type of the parameter.
+	Description string   `json:"description"`
+	Enum        []string `json:"enum,omitempty"` // Optional list of valid values for the parameter.
 }
 
 type FunctionPayload struct {
