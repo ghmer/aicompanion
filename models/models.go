@@ -242,9 +242,10 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 }
 
 type MessageRequest struct {
-	OriginalMessage       Message `json:"original_message,omitempty"`
-	Message               Message `json:"message"`
-	RetainOriginalMessage bool    `json:"retain_original"`
+	OriginalMessage       Message              `json:"original_message,omitempty"`
+	Message               Message              `json:"message"`
+	RetainOriginalMessage bool                 `json:"retain_original"`
+	Tools                 []FunctionDefinition `json:"tools,omitempty"`
 }
 
 // Message represents an individual message in the chat.
@@ -343,26 +344,44 @@ type Function struct {
 }
 
 type FunctionDefinition struct {
-	FunctionName string      `json:"function_name"` // The name of the function.
-	Description  string      `json:"description"`
-	Parameters   []Parameter `json:"parameters"` // List of parameters the function takes.
+	FunctionName string            `json:"function_name"` // The name of the function.
+	Description  string            `json:"description"`
+	Parameters   FunctionParameter `json:"parameters"`
 }
+
+type FunctionType string
+
+const (
+	TypeFunction FunctionType = "function"
+)
+
+type FunctionParameter struct {
+	Type       FunctionType         `json:"type"`
+	Properties map[string]Parameter `json:"properties"` // The properties of the parameter.
+	Required   []string             `json:"required,omitempty"`
+}
+
+type ParameterType string
+
+const (
+	Object ParameterType = "object"
+)
 
 // Parameter represents the details of a single parameter.
 type Parameter struct {
-	Name        string `json:"name"` // Name of the parameter.
-	Type        string `json:"type"` // Type of the parameter.
-	Description string `json:"description"`
+	Type        ParameterType `json:"type"` // Type of the parameter.
+	Description string        `json:"description"`
+	Enum        []string      `json:"enum,omitempty"` // Optional list of valid values for the parameter.
+}
+
+type FunctionPayload struct {
+	FunctionName string                 `json:"name"`      // The name of the function.
+	Parameters   map[string]interface{} `json:"arguments"` // List of parameters the function takes.
 }
 
 type FunctionResponse struct {
 	Status  FunctionResponseStatus `json:"status"`
 	Message string                 `json:"message"`
-}
-
-type FunctionPayload struct {
-	FunctionName string                 `json:"function_name"` // The name of the function.
-	Parameters   map[string]interface{} `json:"parameters"`    // List of parameters the function takes.
 }
 
 type FunctionResponseStatus string

@@ -205,6 +205,7 @@ func (companion *Companion) SendChatRequest(message models.MessageRequest, strea
 		Model:    string(companion.Config.AiModels.ChatModel.Model),
 		Messages: companion.PrepareConversation(message.Message, companion.Config.IncludeStrategy),
 		Stream:   streaming,
+		Tools:    message.Tools,
 	}
 
 	// Marshal the payload into JSON

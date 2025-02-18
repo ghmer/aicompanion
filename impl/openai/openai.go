@@ -77,11 +77,12 @@ type CompletionTokensDetails struct {
 
 // ChatRequest represents the input payload for chat completions.
 type ChatRequest struct {
-	Model       string           `json:"model"`
-	Messages    []models.Message `json:"messages"`
-	MaxTokens   int              `json:"max_tokens,omitempty"`
-	Temperature float32          `json:"temperature,omitempty"`
-	Stream      bool             `json:"stream,omitempty"`
+	Model       string                      `json:"model"`
+	Messages    []models.Message            `json:"messages"`
+	MaxTokens   int                         `json:"max_tokens,omitempty"`
+	Temperature float32                     `json:"temperature,omitempty"`
+	Stream      bool                        `json:"stream,omitempty"`
+	Tools       []models.FunctionDefinition `json:"tools,omitempty"`
 }
 
 // Message represents an individual message in the chat.

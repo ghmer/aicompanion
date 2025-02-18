@@ -288,6 +288,7 @@ func (companion *Companion) sendCompletionRequest(message models.MessageRequest,
 		Model:    companion.Config.AiModels.ChatModel.Model,
 		Messages: companion.PrepareConversation(message.Message, companion.Config.IncludeStrategy),
 		Stream:   streaming,
+		Tools:    message.Tools,
 	}
 
 	sideKick.Debug(fmt.Sprintf("sendCompletionRequest: useGeneratePrompt: %v", useGeneratePrompt), companion.Config.Terminal)
