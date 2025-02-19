@@ -242,10 +242,10 @@ func NewConfigFromFile(filePath string) (*Configuration, error) {
 }
 
 type MessageRequest struct {
-	OriginalMessage       Message              `json:"original_message,omitempty"`
-	Message               Message              `json:"message"`
-	RetainOriginalMessage bool                 `json:"retain_original"`
-	Tools                 []FunctionDefinition `json:"tools,omitempty"`
+	OriginalMessage       Message    `json:"original_message,omitempty"`
+	Message               Message    `json:"message"`
+	RetainOriginalMessage bool       `json:"retain_original"`
+	Tools                 []Function `json:"tools,omitempty"`
 }
 
 // Message represents an individual message in the chat.
