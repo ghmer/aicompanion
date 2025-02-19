@@ -46,7 +46,7 @@ type SideKickInterface interface {
 	ReadFile(filepath string) ([]byte, error)
 
 	// RunFunction runs a function and returns the response
-	RunFunction(httpClient *http.Client, function models.Function, payload models.FunctionPayload, debug, trace bool) (models.FunctionResponse, error)
+	RunFunction(httpClient *http.Client, tool models.Tool, payload models.FunctionPayload, debug, trace bool) (models.FunctionResponse, error)
 
 	// Debug logs a debug message.
 	Debug(payload string, termconfig models.Terminal)

@@ -115,8 +115,10 @@ type AICompanion interface {
 	// HandleStreamResponse handles streaming responses from an HTTP request.
 	HandleStreamResponse(resp *http.Response, streamType models.StreamType, callback func(m models.Message) error) (models.Message, error)
 
+	SendToolRequest(message models.MessageRequest) (models.Message, error)
+
 	// RunFunction runs a function and returns the response
-	RunFunction(function models.Function, payload models.FunctionPayload) (models.FunctionResponse, error)
+	RunFunction(tool models.Tool, payload models.FunctionPayload) (models.FunctionResponse, error)
 }
 
 // NewCompanion creates a new Companion instance with the provided configuration.

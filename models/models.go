@@ -254,6 +254,7 @@ type Message struct {
 	Content         string         `json:"content"`          // Content of the message
 	Images          *[]Base64Image `json:"images,omitempty"` // Images associated with the message
 	AlternatePrompt string         `json:"alternate_prompt,omitempty"`
+	ToolCalls       []ToolCall     `json:"tool_calls,omitempty"`
 }
 
 // Base64Image represents an image encoded in base64.
@@ -336,11 +337,11 @@ const (
 	Chat     StreamType = 2
 )
 
-type Function struct {
-	Id         string          `json:"function_id"`
-	Endpoint   string          `json:"function_endpoint"`
-	ApiKey     string          `json:"function_apikey"`
-	Definition FunctionWrapper `json:"function_definition"` // The function definition.
+type Tool struct {
+	Id       string   `json:"tool_id"`
+	Endpoint string   `json:"tool_endpoint"`
+	ApiKey   string   `json:"tool_apikey"`
+	Function Function `json:"tool_definition"` // The function definition.
 }
 
 type FunctionType string
@@ -349,7 +350,7 @@ const (
 	TypeFunction FunctionType = "function"
 )
 
-type FunctionWrapper struct {
+type Function struct {
 	Type     FunctionType       `json:"type"`
 	Function FunctionDefinition `json:"function"`
 }
@@ -377,6 +378,10 @@ type Parameter struct {
 	Type        string   `json:"type"` // Type of the parameter.
 	Description string   `json:"description"`
 	Enum        []string `json:"enum,omitempty"` // Optional list of valid values for the parameter.
+}
+
+type ToolCall struct {
+	Paylod FunctionPayload `json:"function"`
 }
 
 type FunctionPayload struct {

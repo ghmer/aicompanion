@@ -183,7 +183,7 @@ func (utility *SideKick) CreateModerationRequest(input string) models.Moderation
 	}
 }
 
-func (utility *SideKick) RunFunction(httpClient *http.Client, function models.Function, payload models.FunctionPayload, debug, trace bool) (models.FunctionResponse, error) {
+func (utility *SideKick) RunFunction(httpClient *http.Client, tool models.Tool, payload models.FunctionPayload, debug, trace bool) (models.FunctionResponse, error) {
 	result := models.FunctionResponse{}
 
 	payloadBytes, err := json.Marshal(payload.Parameters)
@@ -193,12 +193,12 @@ func (utility *SideKick) RunFunction(httpClient *http.Client, function models.Fu
 	}
 
 	// Create and configure the HTTP request
-	req, err := http.NewRequestWithContext(context.Background(), "POST", function.Endpoint, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", tool.Endpoint, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		log.Println(err)
 		return result, err
 	}
-	req.Header.Set("Authorization", "Bearer "+function.ApiKey)
+	req.Header.Set("Authorization", "Bearer "+tool.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	// Execute the HTTP request

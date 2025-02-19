@@ -282,6 +282,10 @@ func (companion *MockAICompanion) HandleStreamResponse(resp *http.Response, stre
 	return result, nil
 }
 
+func (companion *MockAICompanion) SendToolRequest(message models.MessageRequest) (models.Message, error) {
+	return models.Message{}, errors.ErrUnsupported
+}
+
 func (companion *MockAICompanion) CreateEmbeddingRequest(input []string) *models.EmbeddingRequest {
 	return &models.EmbeddingRequest{}
 }
@@ -303,7 +307,7 @@ func (companion *MockAICompanion) GetModels() ([]models.Model, error) {
 }
 
 // RunFunction executes a function with the provided payload.
-func (companion *MockAICompanion) RunFunction(function models.Function, payload models.FunctionPayload) (models.FunctionResponse, error) {
+func (companion *MockAICompanion) RunFunction(tool models.Tool, payload models.FunctionPayload) (models.FunctionResponse, error) {
 	result := models.FunctionResponse{}
 
 	payloadBytes, err := json.Marshal(payload.Parameters)
@@ -313,12 +317,12 @@ func (companion *MockAICompanion) RunFunction(function models.Function, payload 
 	}
 
 	// Create and configure the HTTP request
-	req, err := http.NewRequestWithContext(context.Background(), "POST", function.Endpoint, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", tool.Endpoint, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		companion.PrintError(err)
 		return result, err
 	}
-	req.Header.Set("Authorization", "Bearer "+function.ApiKey)
+	req.Header.Set("Authorization", "Bearer "+tool.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	companion.Trace(fmt.Sprintf("RunFunction: payload %s", string(payloadBytes)))
@@ -426,7 +430,7 @@ func TestAICompanion(t *testing.T) {
 			t.Errorf("UnMarshalFunctionPayload failed, got %v", err)
 		}
 
-		var function models.Function = models.Function{
+		var function models.Tool = models.Tool{
 			Id:       "1",
 			Endpoint: mockServer.URL,
 			ApiKey:   "12345",
@@ -531,7 +535,7 @@ func TestAICompanion(t *testing.T) {
 	})
 
 	t.Run("Test RunFunctions", func(t *testing.T) {
-		_, err := companion.RunFunction(models.Function{}, models.FunctionPayload{})
+		_, err := companion.RunFunction(models.Tool{}, models.FunctionPayload{})
 		if err.Error() != "not implemented" {
 			t.Errorf("RunFunction failed, expected error %v, got %v", "not implemented", err)
 		}

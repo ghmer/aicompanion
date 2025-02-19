@@ -196,6 +196,83 @@ func (companion *Companion) SendEmbeddingRequest(embedding models.EmbeddingReque
 	return embeddingResponse, nil
 }
 
+func (companion *Companion) SendToolRequest(message models.MessageRequest) (models.Message, error) {
+	var result models.Message
+	var payload CompletionRequest = CompletionRequest{
+		Model:    string(companion.Config.AiModels.ChatModel.Model),
+		Messages: companion.PrepareConversation(message.Message, companion.Config.IncludeStrategy),
+		Stream:   false,
+		Tools:    message.Tools,
+	}
+
+	// Marshal the payload into JSON
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		sideKick.Error(err)
+		return result, err
+	}
+	sideKick.Trace(fmt.Sprintf("SendToolRequest: payloadBytes: %s", string(payloadBytes)), companion.Config.Terminal)
+
+	var ctx context.Context
+	var cancel context.CancelFunc
+	if companion.Config.Terminal.Output {
+		ctx, cancel = context.WithCancel(context.Background())
+		cs := terminal.NewSpinningCharacter('?', 100, 10)
+		cs.StartSpinning(ctx)
+		defer cancel()
+	}
+
+	// Create and configure the HTTP request
+	req, err := http.NewRequestWithContext(context.Background(), "POST", companion.Config.ApiEndpoints.ApiChatURL, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		sideKick.Error(err)
+		return result, err
+	}
+	req.Header.Set("Authorization", "Bearer "+companion.Config.ApiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Execute the HTTP request
+	resp, err := companion.HttpClient.Do(req)
+	if err != nil {
+		sideKick.Error(err)
+		return models.Message{}, err
+	}
+	defer resp.Body.Close()
+
+	sideKick.Debug(fmt.Sprintf("SendToolRequest: StatusCode %d, Status %s", resp.StatusCode, resp.Status), companion.Config.Terminal)
+	err = sideKick.VerifyStatus(resp)
+	if err != nil {
+		sideKick.Error(err)
+		return models.Message{}, err
+	}
+
+	if companion.Config.Terminal.Output {
+		cancel()
+		sideKick.ClearLine(companion.Config.Terminal)
+	}
+
+	// Process the streaming response
+	var bodyBytes []byte
+	bodyBytes, err = io.ReadAll(resp.Body)
+	if err != nil {
+		sideKick.Error(err)
+		return result, nil
+	}
+
+	sideKick.Trace(fmt.Sprintf("SendToolRequest: bodyBytes: %s", string(bodyBytes)), companion.Config.Terminal)
+
+	var completionResponse CompletionResponse
+	err = json.Unmarshal(bodyBytes, &completionResponse)
+	if err != nil {
+		sideKick.Error(err)
+		return result, nil
+	}
+
+	result = completionResponse.Message
+
+	return result, nil
+}
+
 // ProcessUserInput processes the user input by sending it to the API and handling the response.
 func (companion *Companion) SendChatRequest(message models.MessageRequest, streaming bool, callback func(m models.Message) error) (models.Message, error) {
 	sideKick.Trace(fmt.Sprintf("parameters:\nmessage: %v\nstreaming: %v\n", message, streaming), companion.Config.Terminal)
@@ -510,6 +587,6 @@ func (companion *Companion) GetModels() ([]models.Model, error) {
 }
 
 // RunFunction executes a function with the provided payload.
-func (companion *Companion) RunFunction(function models.Function, payload models.FunctionPayload) (models.FunctionResponse, error) {
-	return sideKick.RunFunction(companion.HttpClient, function, payload, companion.Config.Terminal.Debug, companion.Config.Terminal.Trace)
+func (companion *Companion) RunFunction(tool models.Tool, payload models.FunctionPayload) (models.FunctionResponse, error) {
+	return sideKick.RunFunction(companion.HttpClient, tool, payload, companion.Config.Terminal.Debug, companion.Config.Terminal.Trace)
 }
