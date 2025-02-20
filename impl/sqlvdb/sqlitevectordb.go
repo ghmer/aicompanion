@@ -169,8 +169,8 @@ func (s *SQLiteVectorDb) DeleteSchemas(ctx context.Context, classname []string) 
 
 // AddDocument adds a document with the given class name and ID to the database.
 func (s *SQLiteVectorDb) AddDocument(ctx context.Context, classname, id string, document models.Document) error {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if _, exists := s.schemas[classname]; !exists {
 		return errors.New("schema does not exist")
@@ -300,8 +300,8 @@ func (s *SQLiteVectorDb) QueryDocumentsWithFilter(ctx context.Context, classname
 
 // DeleteDocument deletes a document from the database.
 func (s *SQLiteVectorDb) DeleteDocument(ctx context.Context, classname, id string) error {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if _, exists := s.schemas[classname]; !exists {
 		return errors.New("schema does not exist")
@@ -317,8 +317,8 @@ func (s *SQLiteVectorDb) DeleteDocument(ctx context.Context, classname, id strin
 
 // DeleteDocuments deletes multiple documents from the database.
 func (s *SQLiteVectorDb) DeleteDocuments(ctx context.Context, classname string, ids []string) error {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if _, exists := s.schemas[classname]; !exists {
 		return errors.New("schema does not exist")
