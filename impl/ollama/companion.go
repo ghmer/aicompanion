@@ -200,7 +200,7 @@ func (companion *Companion) SendToolRequest(message models.MessageRequest) (mode
 	var result models.Message
 	var payload CompletionRequest = CompletionRequest{
 		Model:    string(companion.Config.AiModels.ChatModel.Model),
-		Messages: companion.PrepareConversation(message.Message, companion.Config.IncludeStrategy),
+		Messages: []models.Message{message.Message},
 		Stream:   false,
 		Tools:    message.Tools,
 	}
