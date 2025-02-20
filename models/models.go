@@ -70,11 +70,12 @@ type Terminal struct {
 }
 
 type Persona struct {
-	Name         string   `json:"name"`
-	Prompt       Prompt   `json:"prompt"`
-	Knowledge    []string `json:"knowledge"`
-	UseKnowledge bool     `json:"use_knowledge"`
-	UseFunctions bool     `json:"use_functions"`
+	Name          string   `json:"name"`
+	Prompt        Prompt   `json:"prompt"`
+	Knowledge     []string `json:"knowledge"`
+	AllowedClaims []string `json:"allowed_claims"`
+	UseKnowledge  bool     `json:"use_knowledge"`
+	UseFunctions  bool     `json:"use_functions"`
 }
 
 func (persona *Persona) AddKnowledge(knowledge string) {
@@ -85,6 +86,19 @@ func (persona *Persona) RemoveKnowledge(knowledge string) {
 	for i, k := range persona.Knowledge {
 		if k == knowledge {
 			persona.Knowledge = append(persona.Knowledge[:i], persona.Knowledge[i+1:]...)
+			break
+		}
+	}
+}
+
+func (persona *Persona) AddAllowedClaim(claim string) {
+	persona.Knowledge = append(persona.AllowedClaims, claim)
+}
+
+func (persona *Persona) RemoveAllowedClaim(claim string) {
+	for i, k := range persona.AllowedClaims {
+		if k == claim {
+			persona.AllowedClaims = append(persona.AllowedClaims[:i], persona.AllowedClaims[i+1:]...)
 			break
 		}
 	}
