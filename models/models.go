@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/ghmer/aicompanion/terminal"
 )
@@ -52,18 +51,6 @@ func (config *Configuration) GetPersona(persona string) Persona {
 	}
 
 	return config.ActivePersona
-}
-
-type Conversation struct {
-	Id           string    `json:"id"`
-	Summary      string    `json:"summary"`
-	Created      time.Time `json:"created,omitempty"`
-	Updated      time.Time `json:"updated,omitempty"`
-	Conversation []Message `json:"conversation"`
-}
-
-func (c *Conversation) AddMessage(msg Message) {
-	c.Conversation = append(c.Conversation, msg)
 }
 
 type IncludeStrategy string
