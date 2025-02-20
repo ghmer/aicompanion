@@ -381,12 +381,12 @@ type Parameter struct {
 }
 
 type ToolCall struct {
-	Paylod FunctionPayload `json:"function"`
+	Payload FunctionPayload `json:"function"`
 }
 
 type FunctionPayload struct {
 	FunctionName string                 `json:"name"`      // The name of the function.
-	Parameters   map[string]interface{} `json:"arguments"` // List of parameters the function takes.
+	Arguments    map[string]interface{} `json:"arguments"` // List of parameters the function takes.
 }
 
 type FunctionResponse struct {

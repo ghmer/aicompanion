@@ -186,7 +186,7 @@ func (utility *SideKick) CreateModerationRequest(input string) models.Moderation
 func (utility *SideKick) RunFunction(httpClient *http.Client, tool models.Tool, payload models.FunctionPayload, debug, trace bool) (models.FunctionResponse, error) {
 	result := models.FunctionResponse{}
 
-	payloadBytes, err := json.Marshal(payload.Parameters)
+	payloadBytes, err := json.Marshal(payload.Arguments)
 	if err != nil {
 		log.Println(err)
 		return result, err

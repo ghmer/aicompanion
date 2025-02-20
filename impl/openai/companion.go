@@ -355,8 +355,24 @@ func (companion *Companion) SendToolRequest(message models.MessageRequest) (mode
 		return result, err
 	}
 
-	result = completionResponse.Choices[0].Message
+	choice := completionResponse.Choices[0].Message
+	var genericToolCalls []models.ToolCall
+	for _, toolCall := range choice.ToolCalls {
+		genericToolCall, err := toolCall.TransformToModel()
+		if err != nil {
+			return result, err
+		}
 
+		genericToolCalls = append(genericToolCalls, genericToolCall)
+	}
+
+	result = models.Message{
+		Role:            choice.Role,
+		Content:         choice.Content,
+		Images:          choice.Images,
+		AlternatePrompt: choice.AlternatePrompt,
+		ToolCalls:       genericToolCalls,
+	}
 	return result, nil
 
 }
@@ -451,7 +467,24 @@ func (companion *Companion) sendCompletionRequest(message models.MessageRequest,
 			return result, err
 		}
 
-		result = completionResponse.Choices[0].Message
+		choice := completionResponse.Choices[0].Message
+		var genericToolCalls []models.ToolCall
+		for _, toolCall := range choice.ToolCalls {
+			genericToolCall, err := toolCall.TransformToModel()
+			if err != nil {
+				return result, err
+			}
+
+			genericToolCalls = append(genericToolCalls, genericToolCall)
+		}
+
+		result = models.Message{
+			Role:            choice.Role,
+			Content:         choice.Content,
+			Images:          choice.Images,
+			AlternatePrompt: choice.AlternatePrompt,
+			ToolCalls:       genericToolCalls,
+		}
 	}
 
 	if !useGeneratePrompt {

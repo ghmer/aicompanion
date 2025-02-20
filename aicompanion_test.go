@@ -310,7 +310,7 @@ func (companion *MockAICompanion) GetModels() ([]models.Model, error) {
 func (companion *MockAICompanion) RunFunction(tool models.Tool, payload models.FunctionPayload) (models.FunctionResponse, error) {
 	result := models.FunctionResponse{}
 
-	payloadBytes, err := json.Marshal(payload.Parameters)
+	payloadBytes, err := json.Marshal(payload.Arguments)
 	if err != nil {
 		companion.PrintError(err)
 		return result, err

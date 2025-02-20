@@ -1,6 +1,10 @@
 package openai
 
-import "github.com/ghmer/aicompanion/models"
+import (
+	"encoding/json"
+
+	"github.com/ghmer/aicompanion/models"
+)
 
 // ModelsRequest represents the request payload for the Models endpoint.
 type ModelsRequest struct {
@@ -35,11 +39,11 @@ type CompletionsRequest struct {
 
 // Choice represents a single completion choice.
 type Choice struct {
-	Delta        Delta          `json:"delta"`
-	Index        int            `json:"index"`
-	LogProbs     float32        `json:"logprobs,omitempty"`
-	FinishReason string         `json:"finish_reason,omitempty"`
-	Message      models.Message `json:"message,omitempty"`
+	Delta        Delta   `json:"delta"`
+	Index        int     `json:"index"`
+	LogProbs     float32 `json:"logprobs,omitempty"`
+	FinishReason string  `json:"finish_reason,omitempty"`
+	Message      Message `json:"message,omitempty"`
 }
 
 type Delta struct {
@@ -87,8 +91,11 @@ type ChatRequest struct {
 
 // Message represents an individual message in the chat.
 type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role            models.Role           `json:"role"`             // Role of the message (user, assistant, system)
+	Content         string                `json:"content"`          // Content of the message
+	Images          *[]models.Base64Image `json:"images,omitempty"` // Images associated with the message
+	AlternatePrompt string                `json:"alternate_prompt,omitempty"`
+	ToolCalls       []ToolCall            `json:"tool_calls,omitempty"`
 }
 
 // ChatResponse represents the response for a chat completion.
@@ -194,4 +201,27 @@ type ModerationCategoryScores struct {
 	SelfHarmInstructions  float32 `json:"self-harm/instructions"`
 	HarassmentThreatening float32 `json:"harassment/threatening"`
 	Violence              float32 `json:"violence"`
+}
+
+type ToolCall struct {
+	Payload FunctionPayload `json:"function"`
+}
+
+func (toolCall *ToolCall) TransformToModel() (models.ToolCall, error) {
+	var model models.ToolCall
+	var arguments map[string]interface{}
+	err := json.Unmarshal([]byte(toolCall.Payload.Arguments), &arguments)
+	if err != nil {
+		return model, err
+	}
+	model.Payload = models.FunctionPayload{
+		FunctionName: toolCall.Payload.FunctionName,
+		Arguments:    arguments,
+	}
+	return model, nil
+}
+
+type FunctionPayload struct {
+	FunctionName string `json:"name"`      // The name of the function.
+	Arguments    string `json:"arguments"` // List of parameters the function takes.
 }
