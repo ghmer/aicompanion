@@ -107,7 +107,6 @@ func (persona *Persona) RemoveAllowedClaim(claim string) {
 type Prompt struct {
 	SystemPrompt        string `json:"system_prompt"`
 	EnrichmentPrompt    string `json:"enrichment_prompt"`
-	FunctionsPrompt     string `json:"functions_prompt"`
 	SummarizationPrompt string `json:"summarization_prompt"`
 }
 

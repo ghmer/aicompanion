@@ -54,16 +54,6 @@ func (companion *MockAICompanion) GetEnrichmentPrompt() string {
 	return companion.Config.ActivePersona.Prompt.EnrichmentPrompt
 }
 
-// SetFunctionsPrompt sets a new functions prompt for the companion.
-func (companion *MockAICompanion) SetFunctionsPrompt(functionsprompt string) {
-	companion.Config.ActivePersona.Prompt.FunctionsPrompt = functionsprompt
-}
-
-// GetFunctionsPrompt returns the current functions prompt of the companion.
-func (companion *MockAICompanion) GetFunctionsPrompt() string {
-	return companion.Config.ActivePersona.Prompt.FunctionsPrompt
-}
-
 // SetSummarizationPrompt sets a new summarization prompt for the companion.
 func (companion *MockAICompanion) SetSummarizationPrompt(summarizationprompt string) {
 	companion.Config.ActivePersona.Prompt.SummarizationPrompt = summarizationprompt
@@ -523,14 +513,6 @@ func TestAICompanion(t *testing.T) {
 		companion.SetEnrichmentPrompt(prompt)
 		if companion.GetEnrichmentPrompt() != prompt {
 			t.Errorf("GetEnrichmentPrompt or SetEnrichmentPrompt failed, expected EnrichmentPrompt %v, got %v", prompt, companion.GetEnrichmentPrompt())
-		}
-	})
-
-	t.Run("Test GetFunctionsPrompt and SetFunctionsPrompt", func(t *testing.T) {
-		prompt := "Functions prompt"
-		companion.SetFunctionsPrompt(prompt)
-		if companion.GetFunctionsPrompt() != prompt {
-			t.Errorf("GetFunctionsPrompt or SetFunctionsPrompt failed, expected FunctionsPrompt %v, got %v", prompt, companion.GetFunctionsPrompt())
 		}
 	})
 

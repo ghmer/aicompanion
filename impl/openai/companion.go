@@ -35,16 +35,6 @@ func (companion *Companion) GetEnrichmentPrompt() string {
 	return companion.Config.ActivePersona.Prompt.EnrichmentPrompt
 }
 
-// SetFunctionsPrompt sets a new functions prompt for the companion.
-func (companion *Companion) SetFunctionsPrompt(functionsprompt string) {
-	companion.Config.ActivePersona.Prompt.FunctionsPrompt = functionsprompt
-}
-
-// GetFunctionsPrompt returns the current functions prompt of the companion.
-func (companion *Companion) GetFunctionsPrompt() string {
-	return companion.Config.ActivePersona.Prompt.FunctionsPrompt
-}
-
 // SetSummarizationPrompt sets a new summarization prompt for the companion.
 func (companion *Companion) SetSummarizationPrompt(summarizationprompt string) {
 	companion.Config.ActivePersona.Prompt.SummarizationPrompt = summarizationprompt
