@@ -12,9 +12,9 @@ import (
 )
 
 type VectorDBQueryOptions struct {
-	Limit               int            `json:"limit"`
-	Filter              map[string]any `json:"filter"`
-	SimilarityThreshold float64        `json:"similarity_threshold"`
+	Limit               int            `json:"limit,omitempty"`
+	Filter              map[string]any `json:"filter,omitempty"`
+	SimilarityThreshold float64        `json:"similarity_threshold,omitempty"`
 }
 
 // Model represents an AI model with its name and identifier.
