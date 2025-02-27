@@ -190,6 +190,11 @@ func NewDefaultConfig(apiProvider models.ApiProvider, apiToken, chatModel, gener
 
 	config.ApiEndpoints = apiEndpoints
 
+	config.RAGQueryOptions = models.VectorDBQueryOptions{
+		Limit:               0,
+		SimilarityThreshold: 0.0,
+	}
+
 	return &config
 }
 
