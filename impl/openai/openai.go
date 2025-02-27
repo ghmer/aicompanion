@@ -209,7 +209,7 @@ type ToolCall struct {
 
 func (toolCall *ToolCall) TransformToModel() (models.ToolCall, error) {
 	var model models.ToolCall
-	var arguments map[string]interface{}
+	var arguments map[string]any
 	err := json.Unmarshal([]byte(toolCall.Payload.Arguments), &arguments)
 	if err != nil {
 		return model, err

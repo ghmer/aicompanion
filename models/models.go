@@ -19,10 +19,11 @@ type Model struct {
 
 // Document represents a stored document with metadata and embeddings.
 type Document struct {
-	ID         string                 `json:"id"`
-	ClassName  string                 `json:"classname"`
-	Embeddings []float32              `json:"embeddings"`
-	Metadata   map[string]interface{} `json:"metadata"`
+	ID         string         `json:"id"`
+	ClassName  string         `json:"classname"`
+	Score      float64        `json:"score"`
+	Embeddings []float32      `json:"embeddings"`
+	Metadata   map[string]any `json:"metadata"`
 }
 
 // Configuration represents the configuration for the application.
@@ -385,8 +386,8 @@ type ToolCall struct {
 }
 
 type FunctionPayload struct {
-	FunctionName string                 `json:"name"`      // The name of the function.
-	Arguments    map[string]interface{} `json:"arguments"` // List of parameters the function takes.
+	FunctionName string         `json:"name"`      // The name of the function.
+	Arguments    map[string]any `json:"arguments"` // List of parameters the function takes.
 }
 
 type FunctionResponse struct {

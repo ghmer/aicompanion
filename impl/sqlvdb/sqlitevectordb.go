@@ -12,6 +12,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
+	"github.com/ghmer/aicompanion/interfaces/vectordb"
 	"github.com/ghmer/aicompanion/models"
 )
 
@@ -79,7 +80,7 @@ func (s *SQLiteVectorDb) schemaExists(ctx context.Context, classname string) (bo
 }
 
 // GetSchema retrieves the schema for storing documents with the given class name.
-func (s *SQLiteVectorDb) GetSchema(ctx context.Context, classname string) (interface{}, error) {
+func (s *SQLiteVectorDb) GetSchema(ctx context.Context, classname string) (any, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -116,7 +117,7 @@ func (s *SQLiteVectorDb) GetSchemas(ctx context.Context) ([]string, error) {
 }
 
 // CreateSchema creates a new schema for storing documents with the given class name.
-func (s *SQLiteVectorDb) CreateSchema(ctx context.Context, classname interface{}) error {
+func (s *SQLiteVectorDb) CreateSchema(ctx context.Context, classname any) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -221,17 +222,8 @@ func (s *SQLiteVectorDb) UpdateDocuments(ctx context.Context, classname string, 
 	return nil
 }
 
-// QueryDocuments queries documents based on a vector and returns the top result.
-func (s *SQLiteVectorDb) QueryDocuments(ctx context.Context, classname string, vector []float32, limit int) ([]models.Document, error) {
-	documents, err := s.QueryDocumentsWithFilter(ctx, classname, vector, limit, nil)
-	if err != nil || len(documents) == 0 {
-		return nil, err
-	}
-	return documents, nil
-}
-
-// QueryDocumentsWithFilter queries documents based on a vector and returns the top results with an optional filter.
-func (s *SQLiteVectorDb) QueryDocumentsWithFilter(ctx context.Context, classname string, vector []float32, limit int, filter map[string]interface{}) ([]models.Document, error) {
+// QueryDocuments queries documents based on a vector and QueryOptions
+func (s *SQLiteVectorDb) QueryDocuments(ctx context.Context, classname string, vector []float32, queryOptions vectordb.QueryOptions) ([]models.Document, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -266,12 +258,12 @@ func (s *SQLiteVectorDb) QueryDocumentsWithFilter(ctx context.Context, classname
 			return nil, fmt.Errorf("failed to deserialize embeddings: %w", err)
 		}
 
-		var metadata map[string]interface{}
+		var metadata map[string]any
 		if err := json.Unmarshal(metadataJSON, &metadata); err != nil {
 			return nil, fmt.Errorf("failed to deserialize metadata: %w", err)
 		}
 
-		if filter == nil || matchesFilter(metadata, filter) {
+		if queryOptions.Filter == nil || matchesFilter(metadata, queryOptions.Filter) {
 			score := cosineSimilarity(queryVector, embeddings)
 			results = append(results, struct {
 				ID    string
@@ -282,6 +274,7 @@ func (s *SQLiteVectorDb) QueryDocumentsWithFilter(ctx context.Context, classname
 				ClassName:  classname,
 				Embeddings: embeddings,
 				Metadata:   metadata,
+				Score:      score,
 			}})
 		}
 	}
@@ -291,8 +284,16 @@ func (s *SQLiteVectorDb) QueryDocumentsWithFilter(ctx context.Context, classname
 	})
 
 	output := []models.Document{}
-	for i := 0; i < len(results) && i < limit; i++ {
-		output = append(output, results[i].Data)
+	if queryOptions.SimilarityThreshold > 0 {
+		for _, doc := range results {
+			if doc.Score >= queryOptions.SimilarityThreshold {
+				output = append(output, doc.Data)
+			}
+		}
+	}
+
+	if queryOptions.Limit > 0 {
+		output = output[:queryOptions.Limit]
 	}
 
 	return output, nil
@@ -354,7 +355,7 @@ func (s *SQLiteVectorDb) NormalizeVector(vector []float32) []float32 {
 }
 
 // matchesFilter checks if the metadata matches the filter.
-func matchesFilter(metadata, filter map[string]interface{}) bool {
+func matchesFilter(metadata, filter map[string]any) bool {
 	for k, v := range filter {
 		if metadata[k] != v {
 			return false
