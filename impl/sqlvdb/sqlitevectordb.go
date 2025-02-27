@@ -12,7 +12,6 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/ghmer/aicompanion/interfaces/vectordb"
 	"github.com/ghmer/aicompanion/models"
 )
 
@@ -223,7 +222,7 @@ func (s *SQLiteVectorDb) UpdateDocuments(ctx context.Context, classname string, 
 }
 
 // QueryDocuments queries documents based on a vector and QueryOptions
-func (s *SQLiteVectorDb) QueryDocuments(ctx context.Context, classname string, vector []float32, queryOptions vectordb.QueryOptions) ([]models.Document, error) {
+func (s *SQLiteVectorDb) QueryDocuments(ctx context.Context, classname string, vector []float32, queryOptions models.VectorDBQueryOptions) ([]models.Document, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 

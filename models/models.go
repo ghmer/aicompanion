@@ -11,6 +11,12 @@ import (
 	"github.com/ghmer/aicompanion/terminal"
 )
 
+type VectorDBQueryOptions struct {
+	Limit               int            `json:"limit"`
+	Filter              map[string]any `json:"filter"`
+	SimilarityThreshold float64        `json:"similarity_threshold"`
+}
+
 // Model represents an AI model with its name and identifier.
 type Model struct {
 	Model string `json:"model"`
@@ -28,16 +34,17 @@ type Document struct {
 
 // Configuration represents the configuration for the application.
 type Configuration struct {
-	ApiProvider     ApiProvider       `json:"api_provider"` // API provider used
-	ApiKey          string            `json:"api_key"`      // API key for authentication
-	ApiEndpoints    ApiEndpointUrls   `json:"api_endpoints"`
-	AiModels        AiModels          `json:"ai_models"` // Specific AI model to use
-	HttpConfig      HttpConfiguration `json:"http_config"`
-	MaxMessages     int               `json:"max_messages"` // Maximum number of messages in a conversation
-	IncludeStrategy IncludeStrategy   `json:"include_strategy"`
-	Terminal        Terminal          `json:"terminal"`
-	ActivePersona   Persona           `json:"active_persona"`
-	Personas        []Persona         `json:"personas"`
+	ApiProvider     ApiProvider          `json:"api_provider"` // API provider used
+	ApiKey          string               `json:"api_key"`      // API key for authentication
+	ApiEndpoints    ApiEndpointUrls      `json:"api_endpoints"`
+	AiModels        AiModels             `json:"ai_models"` // Specific AI model to use
+	HttpConfig      HttpConfiguration    `json:"http_config"`
+	MaxMessages     int                  `json:"max_messages"` // Maximum number of messages in a conversation
+	IncludeStrategy IncludeStrategy      `json:"include_strategy"`
+	Terminal        Terminal             `json:"terminal"`
+	ActivePersona   Persona              `json:"active_persona"`
+	Personas        []Persona            `json:"personas"`
+	RAGQueryOptions VectorDBQueryOptions `json:"rag_query_options"`
 }
 
 func (config *Configuration) GetPersona(persona string) Persona {
