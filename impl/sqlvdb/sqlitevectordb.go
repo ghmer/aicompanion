@@ -282,12 +282,18 @@ func (s *SQLiteVectorDb) QueryDocuments(ctx context.Context, classname string, v
 		return results[i].Score > results[j].Score
 	})
 
+	fmt.Println("size of sort", len(results))
+	fmt.Println("queryOptions", queryOptions)
+
 	output := []models.Document{}
-	if queryOptions.SimilarityThreshold > 0 {
-		for _, doc := range results {
+	for _, doc := range results {
+		fmt.Println("score", doc.Score)
+		if queryOptions.SimilarityThreshold > 0 {
 			if doc.Score >= queryOptions.SimilarityThreshold {
 				output = append(output, doc.Data)
 			}
+		} else {
+			output = append(output, doc.Data)
 		}
 	}
 
