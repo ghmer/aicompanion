@@ -298,7 +298,9 @@ func (s *SQLiteVectorDb) QueryDocuments(ctx context.Context, classname string, v
 	}
 
 	if queryOptions.Limit > 0 {
-		output = output[:queryOptions.Limit]
+		if len(output) > queryOptions.Limit {
+			output = output[:queryOptions.Limit]
+		}
 	}
 
 	return output, nil
